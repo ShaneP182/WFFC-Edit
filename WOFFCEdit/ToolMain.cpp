@@ -338,16 +338,37 @@ void ToolMain::UpdateInput(MSG * msg)
 	}
 	else m_toolInputCommands.right = false;
 	//rotation
-	if (m_keyArray['E'])
+	if (m_keyArray[39]) // 39 = right arrow
 	{
 		m_toolInputCommands.rotRight = true;
 	}
 	else m_toolInputCommands.rotRight = false;
-	if (m_keyArray['Q'])
+	if (m_keyArray[37]) // 37 = left arrow
 	{
 		m_toolInputCommands.rotLeft = true;
 	}
 	else m_toolInputCommands.rotLeft = false;
+	if (m_keyArray[38]) // 38 = up arrow
+	{
+		m_toolInputCommands.rotUp = true;
+	}
+	else m_toolInputCommands.rotUp = false;
+	if (m_keyArray[40]) // 40 = down arrow
+	{
+		m_toolInputCommands.rotDown = true;
+	}
+	else m_toolInputCommands.rotDown = false;
 
-	//WASD
+	//elevation
+	if (m_keyArray['Q'])
+	{
+		m_toolInputCommands.down = true;
+	}
+	else m_toolInputCommands.down = false;
+
+	if (m_keyArray['E'])
+	{
+		m_toolInputCommands.up = true;
+	}
+	else m_toolInputCommands.up = false;
 }
