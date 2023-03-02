@@ -1,7 +1,11 @@
 ﻿C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(517,5): warning MSB8028: The intermediate directory (Debug\) contains files shared from another project (Win32SimpleSample.vcxproj).  This can lead to incorrect clean and rebuild behavior.
-  Game.cpp
-C:\Users\shane\Documents\Github\WFFC-Edit\WOFFCEdit\Game.cpp(194,57): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-C:\Users\shane\Documents\Github\WFFC-Edit\WOFFCEdit\Game.cpp(193,57): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-C:\Users\shane\Documents\Github\WFFC-Edit\WOFFCEdit\Game.cpp(192,97): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-C:\Users\shane\Documents\Github\WFFC-Edit\WOFFCEdit\Game.cpp(178,10): warning C4101: 'Buffer': unreferenced local variable
+  Camera.cpp
+C:\Users\shane\Documents\Github\WFFC-Edit\WOFFCEdit\Camera.cpp(9,23): warning C4305: '=': truncation from 'double' to 'float'
+C:\Users\shane\Documents\Github\WFFC-Edit\WOFFCEdit\Camera.cpp(104,29): warning C4244: '=': conversion from 'int' to 'float', possible loss of data
+C:\Users\shane\Documents\Github\WFFC-Edit\WOFFCEdit\Camera.cpp(105,29): warning C4244: '=': conversion from 'int' to 'float', possible loss of data
+C:\Users\shane\Documents\Github\WFFC-Edit\WOFFCEdit\Camera.cpp(107,63): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
+C:\Users\shane\Documents\Github\WFFC-Edit\WOFFCEdit\Camera.cpp(108,63): warning C4244: '-=': conversion from 'double' to 'float', possible loss of data
+C:\Users\shane\Documents\Github\WFFC-Edit\WOFFCEdit\Camera.cpp(128,66): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\shane\Documents\Github\WFFC-Edit\WOFFCEdit\Camera.cpp(129,28): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\shane\Documents\Github\WFFC-Edit\WOFFCEdit\Camera.cpp(130,66): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
   Win32SimpleSample.vcxproj -> C:\Users\shane\Documents\Github\WFFC-Edit\WOFFCEdit\Debug\WoFEdit.exe

@@ -38,6 +38,8 @@ Camera::Camera()
 	m_camOrientation.x = 0.0f;
 	m_camOrientation.y = 0.0f;
 	m_camOrientation.z = 0.0f;
+
+	mouseMode = false;
 }
 
 Camera::~Camera()
@@ -47,29 +49,69 @@ Camera::~Camera()
 
 void Camera::Update(DX::StepTimer const& timer, InputCommands* input)
 {
+	// Update to add mouse input. When mouse is clicked and held when hovered over the scene window, move to middle of screen then get difference in position every frame.
+	// Also add locking to 180 degrees up/down.
+
 	//camera motion is on a plane, so kill the y component of the look direction
 	Vector3 planarMotionVector = m_camLookDirection;
 	planarMotionVector.y = 0.0;
 
-	// Process rotation input.
-	if (input->rotRight)
+	RECT rect;
+	GetActiveWindow();
+	GetWindowRect(GetActiveWindow(), &rect);
+
+	int width = rect.right - rect.left;
+	int height = rect.bottom - rect.top;
+
+	if (input->RMBDown && !mouseMode)
 	{
-		m_camOrientation.y += m_camRotRate;
+		SetCursorPos(width / 2, height/ 2);
+		input->mouseX = width / 2;
+		input->mouseY = height / 2;
+		//lastMouseX = input->mouseX;
+		//lastMouseY = input->mouseY;
+		mouseMode = true;
 	}
-	if (input->rotLeft)
+	else if(!input->RMBDown)
 	{
-		m_camOrientation.y -= m_camRotRate;
+		mouseMode = false;
+		// Process rotation input.
+		if (input->rotRight)
+		{
+			m_camOrientation.y += m_camRotRate;
+		}
+		if (input->rotLeft)
+		{
+			m_camOrientation.y -= m_camRotRate;
+		}
+		if (input->rotUp)
+		{
+			m_camOrientation.z += m_camRotRate;
+
+		}
+		if (input->rotDown)
+		{
+			m_camOrientation.z -= m_camRotRate;
+
+		}
 	}
-	if (input->rotUp)
+
+	float distanceX;
+	float distanceY;
+
+	if (mouseMode)
 	{
-		m_camOrientation.z += m_camRotRate;
-	}
-	if (input->rotDown)
-	{
-		m_camOrientation.z -= m_camRotRate;
+		distanceX = input->mouseX - width / 2;
+		distanceY = input->mouseY - height / 2;
+
+		m_camOrientation.y += distanceX * timer.GetElapsedSeconds() * m_camRotRate;
+		m_camOrientation.z -= distanceY * timer.GetElapsedSeconds() * m_camRotRate;
+
+		SetCursorPos(width / 2, height / 2);
 	}
 
 
+	
 	//create look direction from Euler angles in m_camOrientation
 	/*
 	m_camLookDirection.x = sin((m_camOrientation.y)*3.1415 / 180);
@@ -78,6 +120,10 @@ void Camera::Update(DX::StepTimer const& timer, InputCommands* input)
 	*/
 
 	// x = roll, y = yaw, z = pitch
+	// lock pitch so can't look too far up or down
+	if (m_camOrientation.z > 90) m_camOrientation.z = 90;
+	else if (m_camOrientation.z < -90) m_camOrientation.z = -90;
+
 	// Create look direction using parametric equation of a sphere.
 	m_camLookDirection.x = cos((m_camOrientation.y) * 3.1415 / 180) * cos((m_camOrientation.z) * 3.1415 / 180);
 	m_camLookDirection.y = sin((m_camOrientation.z) * 3.1415 / 180);
@@ -116,4 +162,6 @@ void Camera::Update(DX::StepTimer const& timer, InputCommands* input)
 
 	//update lookat point
 	m_camLookAt = m_camPosition + m_camLookDirection;
+
+	
 }

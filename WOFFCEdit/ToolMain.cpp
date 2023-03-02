@@ -306,12 +306,32 @@ void ToolMain::UpdateInput(MSG * msg)
 		break;
 
 	case WM_MOUSEMOVE:
+		POINT point;
+		GetCursorPos(&point);
+
+		m_toolInputCommands.mouseX = point.x;
+		m_toolInputCommands.mouseY = point.y;
 		break;
 
 	case WM_LBUTTONDOWN:	//mouse button down,  you will probably need to check when its up too
 		//set some flag for the mouse button in inputcommands
+		m_toolInputCommands.LMBDown = true;
 		break;
 
+	case WM_RBUTTONDOWN:
+		//SetCursor
+		ShowCursor(false);
+		m_toolInputCommands.RMBDown = true;
+		break;
+
+	case WM_LBUTTONUP:
+		m_toolInputCommands.LMBDown = false;
+		break;
+
+	case WM_RBUTTONUP:
+		ShowCursor(true);
+		m_toolInputCommands.RMBDown = false;
+		break;
 	}
 	//here we update all the actual app functionality that we want.  This information will either be used int toolmain, or sent down to the renderer (Camera movement etc
 	//WASD movement
