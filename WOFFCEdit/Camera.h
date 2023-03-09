@@ -27,5 +27,7 @@ private:
 	bool mouseMode;
 	int lastMouseX;
 	int lastMouseY;
+	int clickX;
+	int clickY;
 };
 

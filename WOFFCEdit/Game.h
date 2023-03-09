@@ -51,6 +51,7 @@ public:
 	void SaveDisplayChunk(ChunkObject *SceneChunk);	//saves geometry et al
 	void ClearDisplayList();
 
+	int MousePicking();
 #ifdef DXTK_AUDIO
 	void NewAudioDevice();
 #endif
@@ -71,6 +72,8 @@ private:
 
 	//camera
 	Camera								camera;
+
+	RECT m_ScreenDimensions;
 
 	//control variables
 	bool m_grid;							//grid rendering on / off

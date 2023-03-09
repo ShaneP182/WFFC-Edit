@@ -56,8 +56,10 @@ void Camera::Update(DX::StepTimer const& timer, InputCommands* input)
 	Vector3 planarMotionVector = m_camLookDirection;
 	planarMotionVector.y = 0.0;
 
+	//update to use mouse position rather than moving to centre of screen
+
+	// optimize by only doing this when holding mouse, not every update
 	RECT rect;
-	GetActiveWindow();
 	GetWindowRect(GetActiveWindow(), &rect);
 
 	int width = rect.right - rect.left;
@@ -65,9 +67,9 @@ void Camera::Update(DX::StepTimer const& timer, InputCommands* input)
 
 	if (input->RMBDown && !mouseMode)
 	{
-		SetCursorPos(width / 2, height/ 2);
-		input->mouseX = width / 2;
-		input->mouseY = height / 2;
+		clickX = input->mouseX;
+		clickY = input->mouseY;
+
 		//lastMouseX = input->mouseX;
 		//lastMouseY = input->mouseY;
 		mouseMode = true;
@@ -101,13 +103,13 @@ void Camera::Update(DX::StepTimer const& timer, InputCommands* input)
 
 	if (mouseMode)
 	{
-		distanceX = input->mouseX - width / 2;
-		distanceY = input->mouseY - height / 2;
+		distanceX = input->mouseX - clickX;
+		distanceY = input->mouseY - clickY;
 
 		m_camOrientation.y += distanceX * timer.GetElapsedSeconds() * m_camRotRate;
 		m_camOrientation.z -= distanceY * timer.GetElapsedSeconds() * m_camRotRate;
 
-		SetCursorPos(width / 2, height / 2);
+		SetCursorPos(clickX, clickY);
 	}
 
 

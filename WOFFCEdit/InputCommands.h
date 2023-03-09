@@ -16,4 +16,6 @@ struct InputCommands
 	bool RMBDown;
 	int mouseX;
 	int mouseY;
+	int pickerX;
+	int pickerY;
 };
