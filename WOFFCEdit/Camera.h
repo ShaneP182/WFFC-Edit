@@ -13,6 +13,8 @@ public:
 	void Update(DX::StepTimer const& timer, InputCommands* input);
 	DirectX::SimpleMath::Vector3 GetPosition() { return m_camPosition; };
 	DirectX::SimpleMath::Vector3 GetLookAt() { return m_camLookAt; };
+	DirectX::SimpleMath::Vector3 GetRight() { return m_camRight; };
+	DirectX::SimpleMath::Vector3 GetForward() { return m_camLookDirection; };
 
 private:
 	// Camera properties

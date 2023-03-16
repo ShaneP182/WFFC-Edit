@@ -13,6 +13,7 @@
 #include "InputCommands.h"
 #include <vector>
 #include "Camera.h"
+#include "ObjectManipulator.h"
 
 // A basic game implementation that creates a D3D11 device and
 // provides a game loop.
@@ -72,6 +73,7 @@ private:
 
 	//camera
 	Camera								camera;
+	ObjectManipulator					objectManipulator;
 
 	RECT m_ScreenDimensions;
 

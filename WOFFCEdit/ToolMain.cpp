@@ -18,6 +18,7 @@ ToolMain::ToolMain()
 	m_toolInputCommands.back		= false;
 	m_toolInputCommands.left		= false;
 	m_toolInputCommands.right		= false;
+	m_toolInputCommands.shift		= false;
 	
 }
 
@@ -294,11 +295,18 @@ void ToolMain::Tick(MSG *msg)
 void ToolMain::UpdateInput(MSG * msg)
 {
 
+
 	switch (msg->message)
 	{
 		//Global inputs,  mouse position and keys etc
 	case WM_KEYDOWN:
 		m_keyArray[msg->wParam] = true;
+
+		if (msg->wParam == VK_SHIFT)
+		{
+			m_toolInputCommands.shift = !m_toolInputCommands.shift;
+		}
+
 		break;
 
 	case WM_KEYUP:
@@ -306,8 +314,6 @@ void ToolMain::UpdateInput(MSG * msg)
 		break;
 
 	case WM_MOUSEMOVE:
-		
-
 		// Used for rotation since moving mouse with SetCursorPos uses different co-ordinate space from l paramsuwuowo
 		POINT point;
 		GetCursorPos(&point);
@@ -317,7 +323,6 @@ void ToolMain::UpdateInput(MSG * msg)
 		// different co-ordinates used for picking
 		m_toolInputCommands.pickerX = GET_X_LPARAM(msg->lParam);
 		m_toolInputCommands.pickerY = GET_Y_LPARAM(msg->lParam);
-
 		break;
 
 	case WM_LBUTTONDOWN:	//mouse button down,  you will probably need to check when its up too
@@ -344,7 +349,7 @@ void ToolMain::UpdateInput(MSG * msg)
 	if (m_toolInputCommands.LMBDown)
 	{
 		m_selectedObject = m_d3dRenderer.MousePicking();
-		m_toolInputCommands.LMBDown = false;
+		//m_toolInputCommands.LMBDown = false;
 	}
 
 	//here we update all the actual app functionality that we want.  This information will either be used int toolmain, or sent down to the renderer (Camera movement etc

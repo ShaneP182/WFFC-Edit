@@ -115,6 +115,7 @@ void Game::Update(DX::StepTimer const& timer)
 {
     //update camera with inputs
     camera.Update(timer, &m_InputCommands);
+    objectManipulator.Update(timer, &m_InputCommands, &camera);
 
 	//apply camera vectors
     m_view = Matrix::CreateLookAt(camera.GetPosition(), camera.GetLookAt(), Vector3::UnitY);
@@ -460,9 +461,15 @@ int Game::MousePicking()
                 {
                     selectedID = i;
                     closestDistance = pickedDistance;
+                    
                 }
             }
         }
+    }
+
+    if (selectedID >= 0 && !objectManipulator.GetActive())
+    {
+        objectManipulator.SetObject(&m_displayList[selectedID]);
     }
 
     //if we got a hit.  return it.  
