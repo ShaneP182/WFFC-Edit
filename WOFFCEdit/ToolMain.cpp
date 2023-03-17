@@ -278,6 +278,11 @@ void ToolMain::onActionSaveTerrain()
 	m_d3dRenderer.SaveDisplayChunk(&m_chunk);
 }
 
+void ToolMain::setManipulationMode(ManipulationMode mode)
+{
+	m_d3dRenderer.SetManipulationMode(mode);
+}
+
 void ToolMain::Tick(MSG *msg)
 {
 	//do we have a selection

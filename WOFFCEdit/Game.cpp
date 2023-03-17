@@ -416,6 +416,11 @@ void Game::SaveDisplayChunk(ChunkObject * SceneChunk)
 	m_displayChunk.SaveHeightMap();			//save heightmap to file.
 }
 
+void Game::SetManipulationMode(ManipulationMode mode)
+{
+    objectManipulator.SetMode(mode);
+}
+
 int Game::MousePicking()
 {
     GetClientRect(GetActiveWindow(), &m_ScreenDimensions);

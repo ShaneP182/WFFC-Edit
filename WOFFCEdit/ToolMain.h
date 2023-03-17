@@ -7,7 +7,7 @@
 #include "SceneObject.h"
 #include "InputCommands.h"
 #include <vector>
-
+#include "ObjectManipulator.h"
 
 class ToolMain
 {
@@ -22,6 +22,8 @@ public: //methods
 	void	onActionLoad();													//load the current chunk
 	afx_msg	void	onActionSave();											//save the current chunk
 	afx_msg void	onActionSaveTerrain();									//save chunk geometry
+	afx_msg void	setManipulationMode(ManipulationMode mode);
+
 
 	void	Tick(MSG *msg);
 	void	UpdateInput(MSG *msg);
