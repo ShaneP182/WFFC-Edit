@@ -11,6 +11,8 @@ BEGIN_MESSAGE_MAP(MFCMain, CWinApp)
 	ON_COMMAND(ID_BUTTON_TRANSLATE, &MFCMain::ToolBarTranslate)
 	ON_COMMAND(ID_BUTTON_ROTATE, &MFCMain::ToolBarRotate)
 	ON_COMMAND(ID_BUTTON_SCALE, &MFCMain::ToolBarScale)
+	ON_COMMAND(ID_BUTTON_WIREFRAME, &MFCMain::ToolBarWireframeObjects)
+	ON_COMMAND(ID_BUTTON_WIREFRAME_LANDSCAPE, &MFCMain::ToolBarWireframeLandscape)
 	ON_UPDATE_COMMAND_UI(ID_INDICATOR_TOOL, &CMyFrame::OnUpdatePage)
 END_MESSAGE_MAP()
 
@@ -21,7 +23,7 @@ BOOL MFCMain::InitInstance()
 	m_pMainWnd = m_frame;
 
 	m_frame->Create(	NULL,
-					_T("World Of Flim-Flam Craft Editor"),
+					_T("World Of Corgcraft Editor"),
 					WS_OVERLAPPEDWINDOW,
 					CRect(100, 100, 1024, 768),
 					NULL,
@@ -114,17 +116,27 @@ void MFCMain::ToolBarButton1()
 
 void MFCMain::ToolBarTranslate()
 {
-	m_ToolSystem.setManipulationMode(ManipulationMode::TRANSLATE);
+	m_ToolSystem.GetGame()->SetManipulationMode(ManipulationMode::TRANSLATE);
 }
 
 void MFCMain::ToolBarRotate()
 {
-	m_ToolSystem.setManipulationMode(ManipulationMode::ROTATE);
+	m_ToolSystem.GetGame()->SetManipulationMode(ManipulationMode::ROTATE);
 }
 
 void MFCMain::ToolBarScale()
 {
-	m_ToolSystem.setManipulationMode(ManipulationMode::SCALE);
+	m_ToolSystem.GetGame()->SetManipulationMode(ManipulationMode::SCALE);
+}
+
+void MFCMain::ToolBarWireframeObjects()
+{
+	m_ToolSystem.GetGame()->ToggleWireframeObjects();
+}
+
+void MFCMain::ToolBarWireframeLandscape()
+{
+	m_ToolSystem.GetGame()->ToggleWireframeTerrain();
 }
 
 

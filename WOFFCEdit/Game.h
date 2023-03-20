@@ -53,6 +53,8 @@ public:
 	void ClearDisplayList();
 	void SetManipulationMode(ManipulationMode mode);
 
+	void ToggleWireframeObjects() { wireframeObjects = !wireframeObjects; };
+	void ToggleWireframeTerrain() { wireframeTerrain = !wireframeTerrain; };
 	int MousePicking();
 #ifdef DXTK_AUDIO
 	void NewAudioDevice();
@@ -67,6 +69,8 @@ private:
 
 	void XM_CALLCONV DrawGrid(DirectX::FXMVECTOR xAxis, DirectX::FXMVECTOR yAxis, DirectX::FXMVECTOR origin, size_t xdivs, size_t ydivs, DirectX::GXMVECTOR color);
 
+	
+
 	//tool specific
 	std::vector<DisplayObject>			m_displayList;
 	DisplayChunk						m_displayChunk;
@@ -75,6 +79,8 @@ private:
 	//camera
 	Camera								camera;
 	ObjectManipulator					objectManipulator;
+	bool wireframeObjects;
+	bool wireframeTerrain;
 
 	RECT m_ScreenDimensions;
 

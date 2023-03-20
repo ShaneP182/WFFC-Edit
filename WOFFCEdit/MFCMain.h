@@ -27,6 +27,7 @@ private:
 	CRect WindowRECT;	//Window area rectangle. 
 	SelectDialogue m_ToolSelectDialogue;			//for modeless dialogue, declare it here
 
+
 	int m_width;		
 	int m_height;
 	
@@ -38,6 +39,8 @@ private:
 	afx_msg void ToolBarTranslate();
 	afx_msg void ToolBarRotate();
 	afx_msg void ToolBarScale();
+	afx_msg void ToolBarWireframeObjects();
+	afx_msg void ToolBarWireframeLandscape();
 
 
 	DECLARE_MESSAGE_MAP()	// required macro for message map functionality  One per class

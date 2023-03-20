@@ -22,11 +22,12 @@ public: //methods
 	void	onActionLoad();													//load the current chunk
 	afx_msg	void	onActionSave();											//save the current chunk
 	afx_msg void	onActionSaveTerrain();									//save chunk geometry
-	afx_msg void	setManipulationMode(ManipulationMode mode);
 
 
 	void	Tick(MSG *msg);
 	void	UpdateInput(MSG *msg);
+
+	Game*	GetGame() { return &m_d3dRenderer; };
 
 public:	//variables
 	std::vector<SceneObject>    m_sceneGraph;	//our scenegraph storing all the objects in the current chunk
