@@ -13,6 +13,7 @@ BEGIN_MESSAGE_MAP(MFCMain, CWinApp)
 	ON_COMMAND(ID_BUTTON_SCALE, &MFCMain::ToolBarScale)
 	ON_COMMAND(ID_BUTTON_WIREFRAME, &MFCMain::ToolBarWireframeObjects)
 	ON_COMMAND(ID_BUTTON_WIREFRAME_LANDSCAPE, &MFCMain::ToolBarWireframeLandscape)
+	ON_COMMAND(ID_BUTTON_FOCUS, &MFCMain::ToolBarFocus)
 	ON_UPDATE_COMMAND_UI(ID_INDICATOR_TOOL, &CMyFrame::OnUpdatePage)
 END_MESSAGE_MAP()
 
@@ -32,6 +33,8 @@ BOOL MFCMain::InitInstance()
 					NULL
 				);
 
+	
+
 	//show and set the window to run and update. 
 	m_frame->ShowWindow(SW_SHOW);
 	m_frame->UpdateWindow();
@@ -44,7 +47,6 @@ BOOL MFCMain::InitInstance()
 	m_height	= WindowRECT.Height();
 
 	m_ToolSystem.onActionInitialise(m_toolHandle, m_width, m_height);
-
 	return TRUE;
 }
 
@@ -77,10 +79,25 @@ int MFCMain::Run()
 		{	
 			int ID = m_ToolSystem.getCurrentSelectionID();
 			std::wstring statusString = L"Selected Object: " + std::to_wstring(ID);
+			/*
+			switch (m_ToolSystem.GetGame()->GetManipulationMode())
+			{
+			case ManipulationMode::TRANSLATE:
+				statusString += L", Manipulation Mode: TRANSLATE";
+				break;
+			case ManipulationMode::ROTATE:
+				statusString += L", Manipulation Mode: ROTATE";
+				break;
+			case ManipulationMode::SCALE:
+				statusString += L", Manipulation Mode: SCALE";
+				break;
+			}
+			*/
 			m_ToolSystem.Tick(&msg);
 
 			//send current object ID to status bar in The main frame
 			m_frame->m_wndStatusBar.SetPaneText(1, statusString.c_str(), 1);	
+			
 		}
 	}
 
@@ -137,6 +154,11 @@ void MFCMain::ToolBarWireframeObjects()
 void MFCMain::ToolBarWireframeLandscape()
 {
 	m_ToolSystem.GetGame()->ToggleWireframeTerrain();
+}
+
+void MFCMain::ToolBarFocus()
+{
+	m_ToolSystem.GetGame()->FocusObject(m_ToolSystem.m_selectedObject);
 }
 
 

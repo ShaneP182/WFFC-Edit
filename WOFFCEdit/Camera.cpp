@@ -6,13 +6,16 @@ using namespace DirectX::SimpleMath;
 Camera::Camera()
 {
 	//functional
-	m_camMoveSpeed = 0.30;
+	m_camMoveSpeed = 10.0;
 	m_camRotRate = 3.0;
 
 	//camera
 	m_camPosition.x = 0.0f;
 	m_camPosition.y = 3.7f;
 	m_camPosition.z = -3.5f;
+
+	targetPosition = m_camPosition;
+	startPosition = m_camPosition;
 
 	m_camOrientation.x = 0;
 	m_camOrientation.y = 0;
@@ -40,6 +43,10 @@ Camera::Camera()
 	m_camOrientation.z = 0.0f;
 
 	mouseMode = false;
+
+	lerpSpeed = 4.0f;
+	lerpTimer = 0.0f;
+	isLerping = false;
 }
 
 Camera::~Camera()
@@ -52,10 +59,7 @@ void Camera::Update(DX::StepTimer const& timer, InputCommands* input)
 	// Update to add mouse input. When mouse is clicked and held when hovered over the scene window, move to middle of screen then get difference in position every frame.
 	// Also add locking to 180 degrees up/down.
 
-	//camera motion is on a plane, so kill the y component of the look direction
-	Vector3 planarMotionVector = m_camLookDirection;
-	planarMotionVector.y = 0.0;
-
+	
 	//update to use mouse position rather than moving to centre of screen
 
 	// optimize by only doing this when holding mouse, not every update
@@ -80,20 +84,20 @@ void Camera::Update(DX::StepTimer const& timer, InputCommands* input)
 		// Process rotation input.
 		if (input->rotRight)
 		{
-			m_camOrientation.y += m_camRotRate;
+			m_camOrientation.y += m_camRotRate * timer.GetElapsedSeconds();
 		}
 		if (input->rotLeft)
 		{
-			m_camOrientation.y -= m_camRotRate;
+			m_camOrientation.y -= m_camRotRate * timer.GetElapsedSeconds();
 		}
 		if (input->rotUp)
 		{
-			m_camOrientation.z += m_camRotRate;
+			m_camOrientation.z += m_camRotRate * timer.GetElapsedSeconds();
 
 		}
 		if (input->rotDown)
 		{
-			m_camOrientation.z -= m_camRotRate;
+			m_camOrientation.z -= m_camRotRate * timer.GetElapsedSeconds();
 
 		}
 	}
@@ -135,31 +139,46 @@ void Camera::Update(DX::StepTimer const& timer, InputCommands* input)
 	//create right vector from look Direction
 	m_camLookDirection.Cross(Vector3::UnitY, m_camRight);
 
-	//process input and update stuff
-	if (input->forward)
+	if (isLerping)
 	{
-		m_camPosition += m_camLookDirection * m_camMoveSpeed;
+		lerpTimer += timer.GetElapsedSeconds() * lerpSpeed;
+		m_camPosition = DirectX::XMVectorLerp(startPosition, targetPosition, lerpTimer);
+		if (lerpTimer > 1.0f) // lerp is between 0 and 1, when above 1 lerp has finished.
+		{
+			lerpTimer = 0.0f;
+			m_camPosition = targetPosition;
+			isLerping = false;
+		}
 	}
-	if (input->back)
+	else
 	{
-		m_camPosition -= m_camLookDirection * m_camMoveSpeed;
+		//process input and update stuff
+		if (input->forward)
+		{
+			m_camPosition += m_camLookDirection * m_camMoveSpeed * timer.GetElapsedSeconds();
+		}
+		if (input->back)
+		{
+			m_camPosition -= m_camLookDirection * m_camMoveSpeed * timer.GetElapsedSeconds();
+		}
+		if (input->right)
+		{
+			m_camPosition += m_camRight * m_camMoveSpeed * timer.GetElapsedSeconds();
+		}
+		if (input->left)
+		{
+			m_camPosition -= m_camRight * m_camMoveSpeed * timer.GetElapsedSeconds();
+		}
+		if (input->down)
+		{
+			m_camPosition -= m_camUp * m_camMoveSpeed * timer.GetElapsedSeconds();
+		}
+		if (input->up)
+		{
+			m_camPosition += m_camUp * m_camMoveSpeed * timer.GetElapsedSeconds();
+		}
 	}
-	if (input->right)
-	{
-		m_camPosition += m_camRight * m_camMoveSpeed;
-	}
-	if (input->left)
-	{
-		m_camPosition -= m_camRight * m_camMoveSpeed;
-	}
-	if (input->down)
-	{
-		m_camPosition -= m_camUp * m_camMoveSpeed;
-	}
-	if (input->up)
-	{
-		m_camPosition += m_camUp * m_camMoveSpeed;
-	}
+	
 
 
 	//update lookat point
@@ -167,3 +186,12 @@ void Camera::Update(DX::StepTimer const& timer, InputCommands* input)
 
 	
 }
+
+void Camera::SetPosition(DirectX::SimpleMath::Vector3 pos)
+{
+	targetPosition = pos;
+	startPosition = m_camPosition;
+	isLerping = true;
+	lerpTimer = 0.0f;
+}
+

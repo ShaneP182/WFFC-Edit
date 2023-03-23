@@ -41,6 +41,7 @@ private:
 	afx_msg void ToolBarScale();
 	afx_msg void ToolBarWireframeObjects();
 	afx_msg void ToolBarWireframeLandscape();
+	afx_msg void ToolBarFocus();
 
 
 	DECLARE_MESSAGE_MAP()	// required macro for message map functionality  One per class

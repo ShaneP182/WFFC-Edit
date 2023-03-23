@@ -170,6 +170,8 @@ void Game::Render()
     m_deviceResources->PIXBeginEvent(L"Render");
     auto context = m_deviceResources->GetD3DDeviceContext();
 
+    //m_batchEffect->SetFogEnabled(true);
+
 	if (m_grid)
 	{
 		// Draw procedurally generated dynamic grid
@@ -188,7 +190,44 @@ void Game::Render()
 	int numRenderObjects = m_displayList.size();
 	for (int i = 0; i < numRenderObjects; i++)
 	{
+        
 		m_deviceResources->PIXBeginEvent(L"Draw model");
+
+        if (objectManipulator.GetObject() == &m_displayList[i])
+        {
+            m_displayList[i].m_model->UpdateEffects([&](IEffect* effect)
+                {
+                    auto fog = dynamic_cast<IEffectFog*>(effect);
+            if (fog)
+            {
+
+                
+                float dist = DirectX::SimpleMath::Vector3(camera.GetPosition() - m_displayList[i].m_model->meshes[0]->boundingBox.Center).Length();
+
+                fog->SetFogEnabled(true);
+               
+                // dynamically adjust the fog intensity based on distance
+                fog->SetFogStart(-dist / 2); // assuming RH coordiantes
+                fog->SetFogEnd(dist * 2);
+                fog->SetFogColor(Colors::HotPink);
+                
+            }
+                });
+        }
+        else
+        {
+            m_displayList[i].m_model->UpdateEffects([&](IEffect* effect)
+                {
+                    auto fog = dynamic_cast<IEffectFog*>(effect);
+            if (fog)
+            {
+                fog->SetFogEnabled(false);
+       
+            }
+                });
+        }
+        
+
 		const XMVECTORF32 scale = { m_displayList[i].m_scale.x, m_displayList[i].m_scale.y, m_displayList[i].m_scale.z };
 		const XMVECTORF32 translate = { m_displayList[i].m_position.x, m_displayList[i].m_position.y, m_displayList[i].m_position.z };
 
@@ -200,8 +239,9 @@ void Game::Render()
 		XMMATRIX local = m_world * XMMatrixTransformation(g_XMZero, Quaternion::Identity, scale, g_XMZero, rotate, translate);
 
 		m_displayList[i].m_model->Draw(context, *m_states, local, m_view, m_projection, wireframeObjects);	//last variable in draw,  make TRUE for wireframe
-
+      
 		m_deviceResources->PIXEndEvent();
+
 	}
     m_deviceResources->PIXEndEvent();
 
@@ -426,12 +466,21 @@ void Game::SetManipulationMode(ManipulationMode mode)
     objectManipulator.SetMode(mode);
 }
 
-int Game::MousePicking()
+ManipulationMode Game::GetManipulationMode()
+{
+    return objectManipulator.GetMode();
+}
+
+int Game::MousePicking(int curID)
 {
     GetClientRect(GetActiveWindow(), &m_ScreenDimensions);
     int selectedID = -1;
     float pickedDistance = 0;
     float closestDistance = 9999999;
+    bool hit = false;
+
+    if (m_InputCommands.pickerY > 16 && !objectManipulator.GetActive())
+    {
 
     //setup near and far planes of frustum with mouse X and mouse y passed down from Toolmain. 
     //they may look the same but note, the difference in Z
@@ -471,19 +520,57 @@ int Game::MousePicking()
                 {
                     selectedID = i;
                     closestDistance = pickedDistance;
+
                     
                 }
             }
         }
     }
 
-    if (selectedID >= 0 && !objectManipulator.GetActive())
+
+    if (selectedID >= 0)
     {
         objectManipulator.SetObject(&m_displayList[selectedID]);
     }
-
+    else
+    {
+        objectManipulator.SetObject(NULL);
+    }
+    
     //if we got a hit.  return it.  
     return selectedID;
+    }
+    else // return previous id if click is out of bounds
+    {
+        return curID;
+    }
+   
+}
+
+void Game::FocusObject(int objID) // moves camera to the object
+{
+    if (objID >= 0) // make sure there is a selected object
+    {
+        // calculate forward of object, but with fixed up vector
+        // move camera to forward + focus distance from object. lerp if you want to be fancy
+        // rotate camera to face object
+        // focus distance based on object size? difficult to find size, maybe have fixed distance. or orbit camera with scroll wheel to zoom in and out
+        DirectX::SimpleMath::Vector3 objPosition, newCamPosition;
+        objPosition = m_displayList[objID].m_position;
+
+        // focus on centre of mesh
+        objPosition += m_displayList[objID].m_model.get()->meshes[0]->boundingBox.Center * m_displayList[objID].m_scale.x;
+
+        auto bounds = m_displayList[objID].m_model.get()->meshes[0]->boundingBox.Extents;
+        
+       
+        float dimensions[3] = { bounds.x, bounds.y, bounds.z };
+        float focusDistance = *std::max_element(dimensions, dimensions + 3) * m_displayList[objID].m_scale.x * 2; // get largest dimension, then orbit at twice that length.
+
+       
+        newCamPosition = objPosition + camera.GetForward() * -focusDistance; 
+        camera.SetPosition(newCamPosition);
+    }
 }
 
 #ifdef DXTK_AUDIO

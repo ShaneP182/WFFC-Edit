@@ -33,7 +33,7 @@ void ObjectManipulator::Update(DX::StepTimer const& timer, InputCommands* input,
 	}
 	else
 	{
-		object = NULL;
+		//object = NULL;
 		isManipulating = false;
 	}
 

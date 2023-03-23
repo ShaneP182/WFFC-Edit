@@ -52,10 +52,12 @@ public:
 	void SaveDisplayChunk(ChunkObject *SceneChunk);	//saves geometry et al
 	void ClearDisplayList();
 	void SetManipulationMode(ManipulationMode mode);
+	ManipulationMode GetManipulationMode();
 
 	void ToggleWireframeObjects() { wireframeObjects = !wireframeObjects; };
 	void ToggleWireframeTerrain() { wireframeTerrain = !wireframeTerrain; };
-	int MousePicking();
+	int MousePicking(int curID);
+	void FocusObject(int objID);
 #ifdef DXTK_AUDIO
 	void NewAudioDevice();
 #endif

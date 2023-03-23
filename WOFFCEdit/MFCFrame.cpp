@@ -60,13 +60,14 @@ int CMyFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	
 	CRect rect;
 	GetClientRect(&rect);
+
 	if (!m_wndStatusBar.Create(this))
 	{
 		TRACE0("Failed to create status bar\n");
 		return -1;      // fail to create
 	}
-	m_wndStatusBar.SetIndicators(indicators, sizeof(indicators) / sizeof(UINT));
-	m_wndStatusBar.SetPaneInfo(1, ID_INDICATOR_TOOL, SBPS_NORMAL, rect.Width() - 500);//set width of status bar panel
 
+	m_wndStatusBar.SetIndicators(indicators, sizeof(indicators) / sizeof(UINT));
+	m_wndStatusBar.SetPaneInfo(1, ID_INDICATOR_TOOL, SBPS_NORMAL, rect.Width() + 500);//set width of status bar panel
 	return 0;
 }

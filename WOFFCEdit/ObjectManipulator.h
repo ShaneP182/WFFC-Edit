@@ -19,7 +19,9 @@ public:
 	~ObjectManipulator();
 
 	void SetMode(ManipulationMode mode) { manipulationMode = mode; };
+	ManipulationMode GetMode() { return manipulationMode; };
 	void SetObject(DisplayObject* obj) { object = obj; };
+	DisplayObject* GetObject() { return object; };
 	void Update(DX::StepTimer const& timer, InputCommands* input, Camera* camera);
 	bool GetActive() { return isManipulating; };
 	//void SetObjects(std::vector<DisplayObject> objs) { objects = &objs; };

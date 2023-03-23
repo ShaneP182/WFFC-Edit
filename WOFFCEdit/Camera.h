@@ -16,9 +16,13 @@ public:
 	DirectX::SimpleMath::Vector3 GetRight() { return m_camRight; };
 	DirectX::SimpleMath::Vector3 GetForward() { return m_camLookDirection; };
 
+	void SetPosition(DirectX::SimpleMath::Vector3 pos);
+
 private:
 	// Camera properties
 	DirectX::SimpleMath::Vector3		m_camPosition;
+	DirectX::SimpleMath::Vector3		startPosition;
+	DirectX::SimpleMath::Vector3		targetPosition;
 	DirectX::SimpleMath::Vector3		m_camOrientation;
 	DirectX::SimpleMath::Vector3		m_camLookAt;
 	DirectX::SimpleMath::Vector3		m_camLookDirection;
@@ -31,5 +35,8 @@ private:
 	int lastMouseY;
 	int clickX;
 	int clickY;
+	float lerpSpeed;
+	float lerpTimer;
+	bool isLerping;
 };
 

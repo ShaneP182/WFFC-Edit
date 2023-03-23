@@ -349,7 +349,7 @@ void ToolMain::UpdateInput(MSG * msg)
 
 	if (m_toolInputCommands.LMBDown)
 	{
-		m_selectedObject = m_d3dRenderer.MousePicking();
+		m_selectedObject = m_d3dRenderer.MousePicking(m_selectedObject);
 		//m_toolInputCommands.LMBDown = false;
 	}
 
@@ -411,4 +411,9 @@ void ToolMain::UpdateInput(MSG * msg)
 		m_toolInputCommands.up = true;
 	}
 	else m_toolInputCommands.up = false;
+
+	if (m_keyArray['F'])
+	{
+		m_d3dRenderer.FocusObject(m_selectedObject);
+	}
 }

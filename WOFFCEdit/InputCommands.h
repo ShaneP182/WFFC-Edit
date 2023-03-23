@@ -19,4 +19,5 @@ struct InputCommands
 	int mouseY;
 	int pickerX;
 	int pickerY;
+	bool focusObject;
 };
