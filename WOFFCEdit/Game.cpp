@@ -190,57 +190,62 @@ void Game::Render()
 	int numRenderObjects = m_displayList.size();
 	for (int i = 0; i < numRenderObjects; i++)
 	{
-        
-		m_deviceResources->PIXBeginEvent(L"Draw model");
-
-        if (objectManipulator.GetObject() == &m_displayList[i])
+        if (m_displayList[i].m_render)
         {
-            m_displayList[i].m_model->UpdateEffects([&](IEffect* effect)
-                {
-                    auto fog = dynamic_cast<IEffectFog*>(effect);
-            if (fog)
+
+            m_deviceResources->PIXBeginEvent(L"Draw model");
+            if (m_currentSelection)
             {
 
-                
-                float dist = DirectX::SimpleMath::Vector3(camera.GetPosition() - m_displayList[i].m_model->meshes[0]->boundingBox.Center).Length();
-
-                fog->SetFogEnabled(true);
-               
-                // dynamically adjust the fog intensity based on distance
-                fog->SetFogStart(-dist / 2); // assuming RH coordiantes
-                fog->SetFogEnd(dist * 2);
-                fog->SetFogColor(Colors::HotPink);
-                
-            }
-                });
-        }
-        else
-        {
-            m_displayList[i].m_model->UpdateEffects([&](IEffect* effect)
+                if (i == *m_currentSelection)
                 {
-                    auto fog = dynamic_cast<IEffectFog*>(effect);
-            if (fog)
-            {
-                fog->SetFogEnabled(false);
-       
+                    m_displayList[i].m_model->UpdateEffects([&](IEffect* effect)
+                        {
+                            auto fog = dynamic_cast<IEffectFog*>(effect);
+                    if (fog)
+                    {
+
+
+                        float dist = DirectX::SimpleMath::Vector3(camera.GetPosition() - m_displayList[i].m_model->meshes[0]->boundingBox.Center).Length();
+
+                        fog->SetFogEnabled(true);
+
+                        // dynamically adjust the fog intensity based on distance
+                        fog->SetFogStart(-dist / 2); // assuming RH coordiantes
+                        fog->SetFogEnd(dist * 2);
+                        fog->SetFogColor(Colors::HotPink);
+
+                    }
+                        });
+                }
+                else
+                {
+                    m_displayList[i].m_model->UpdateEffects([&](IEffect* effect)
+                        {
+                            auto fog = dynamic_cast<IEffectFog*>(effect);
+                    if (fog)
+                    {
+                        fog->SetFogEnabled(false);
+
+                    }
+                        });
+                }
             }
-                });
+
+            const XMVECTORF32 scale = { m_displayList[i].m_scale.x, m_displayList[i].m_scale.y, m_displayList[i].m_scale.z };
+            const XMVECTORF32 translate = { m_displayList[i].m_position.x, m_displayList[i].m_position.y, m_displayList[i].m_position.z };
+
+            //convert degrees into radians for rotation matrix
+            XMVECTOR rotate = Quaternion::CreateFromYawPitchRoll(m_displayList[i].m_orientation.y * 3.1415 / 180,
+                m_displayList[i].m_orientation.x * 3.1415 / 180,
+                m_displayList[i].m_orientation.z * 3.1415 / 180);
+
+            XMMATRIX local = m_world * XMMatrixTransformation(g_XMZero, Quaternion::Identity, scale, g_XMZero, rotate, translate);
+
+            m_displayList[i].m_model->Draw(context, *m_states, local, m_view, m_projection, wireframeObjects);	//last variable in draw,  make TRUE for wireframe
+
+            m_deviceResources->PIXEndEvent();
         }
-        
-
-		const XMVECTORF32 scale = { m_displayList[i].m_scale.x, m_displayList[i].m_scale.y, m_displayList[i].m_scale.z };
-		const XMVECTORF32 translate = { m_displayList[i].m_position.x, m_displayList[i].m_position.y, m_displayList[i].m_position.z };
-
-		//convert degrees into radians for rotation matrix
-		XMVECTOR rotate = Quaternion::CreateFromYawPitchRoll(m_displayList[i].m_orientation.y *3.1415 / 180,
-															m_displayList[i].m_orientation.x *3.1415 / 180,
-															m_displayList[i].m_orientation.z *3.1415 / 180);
-
-		XMMATRIX local = m_world * XMMatrixTransformation(g_XMZero, Quaternion::Identity, scale, g_XMZero, rotate, translate);
-
-		m_displayList[i].m_model->Draw(context, *m_states, local, m_view, m_projection, wireframeObjects);	//last variable in draw,  make TRUE for wireframe
-      
-		m_deviceResources->PIXEndEvent();
 
 	}
     m_deviceResources->PIXEndEvent();
@@ -473,6 +478,7 @@ ManipulationMode Game::GetManipulationMode()
 
 int Game::MousePicking(int curID)
 {
+    // BUG TO FIX - DOES MOUSE PICKING WHEN OTHER WINDOWS SELECTED, IE OBJECT DIALOG
     GetClientRect(GetActiveWindow(), &m_ScreenDimensions);
     int selectedID = -1;
     float pickedDistance = 0;

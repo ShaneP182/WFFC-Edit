@@ -53,6 +53,7 @@ public:
 	void ClearDisplayList();
 	void SetManipulationMode(ManipulationMode mode);
 	ManipulationMode GetManipulationMode();
+	void SetSelection(int* sel) { m_currentSelection = sel; };
 
 	void ToggleWireframeObjects() { wireframeObjects = !wireframeObjects; };
 	void ToggleWireframeTerrain() { wireframeTerrain = !wireframeTerrain; };
@@ -83,7 +84,7 @@ private:
 	ObjectManipulator					objectManipulator;
 	bool wireframeObjects;
 	bool wireframeTerrain;
-
+	int* m_currentSelection;
 	RECT m_ScreenDimensions;
 
 	//control variables

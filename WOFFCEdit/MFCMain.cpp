@@ -7,6 +7,7 @@ BEGIN_MESSAGE_MAP(MFCMain, CWinApp)
 	ON_COMMAND(ID_FILE_QUIT,	&MFCMain::MenuFileQuit)
 	ON_COMMAND(ID_FILE_SAVETERRAIN, &MFCMain::MenuFileSaveTerrain)
 	ON_COMMAND(ID_EDIT_SELECT, &MFCMain::MenuEditSelect)
+	ON_COMMAND(ID_WINDOW_OBJECTDIALOG, &MFCMain::MenuWindowObject)
 	ON_COMMAND(ID_BUTTON40001,	&MFCMain::ToolBarButton1)
 	ON_COMMAND(ID_BUTTON_TRANSLATE, &MFCMain::ToolBarTranslate)
 	ON_COMMAND(ID_BUTTON_ROTATE, &MFCMain::ToolBarRotate)
@@ -47,6 +48,13 @@ BOOL MFCMain::InitInstance()
 	m_height	= WindowRECT.Height();
 
 	m_ToolSystem.onActionInitialise(m_toolHandle, m_width, m_height);
+
+	m_ToolObjectDialog.Create(IDD_DIALOG_OBJECT);
+	m_ToolObjectDialog.SetGameRef(m_ToolSystem.GetGame());
+	m_ToolObjectDialog.SetWindowPos(m_pMainWnd, 1024, 100, m_ToolObjectDialog.GetRect().Width(), m_ToolObjectDialog.GetRect().Height(), NULL); // position dialogue next to main window
+	m_ToolObjectDialog.ShowWindow(SW_SHOW);
+	m_ToolObjectDialog.SetObjectData(&m_ToolSystem.m_sceneGraph, &m_ToolSystem.m_selectedObject);
+	
 	return TRUE;
 }
 
@@ -78,22 +86,24 @@ int MFCMain::Run()
 		else
 		{	
 			int ID = m_ToolSystem.getCurrentSelectionID();
-			std::wstring statusString = L"Selected Object: " + std::to_wstring(ID);
-			/*
+			std::wstring statusString;
+			//statusString = L"Selected Object: " + std::to_wstring(ID); // not needed anymore, object highlighting and object dialog box indicate this
+			
 			switch (m_ToolSystem.GetGame()->GetManipulationMode())
 			{
 			case ManipulationMode::TRANSLATE:
-				statusString += L", Manipulation Mode: TRANSLATE";
+				statusString += L"Control Mode: TRANSLATE";
 				break;
 			case ManipulationMode::ROTATE:
-				statusString += L", Manipulation Mode: ROTATE";
+				statusString += L"Control Mode: ROTATE";
 				break;
 			case ManipulationMode::SCALE:
-				statusString += L", Manipulation Mode: SCALE";
+				statusString += L"Control Mode: SCALE";
 				break;
 			}
-			*/
+			
 			m_ToolSystem.Tick(&msg);
+			m_ToolObjectDialog.Update();
 
 			//send current object ID to status bar in The main frame
 			m_frame->m_wndStatusBar.SetPaneText(1, statusString.c_str(), 1);	
@@ -124,6 +134,12 @@ void MFCMain::MenuEditSelect()
 	m_ToolSelectDialogue.Create(IDD_DIALOG1);	//Start up modeless
 	m_ToolSelectDialogue.ShowWindow(SW_SHOW);	//show modeless
 	m_ToolSelectDialogue.SetObjectData(&m_ToolSystem.m_sceneGraph, &m_ToolSystem.m_selectedObject);
+}
+
+void MFCMain::MenuWindowObject()
+{
+	m_ToolObjectDialog.ShowWindow(SW_SHOW);
+	m_ToolObjectDialog.SetObjectData(&m_ToolSystem.m_sceneGraph, &m_ToolSystem.m_selectedObject);
 }
 
 void MFCMain::ToolBarButton1()
@@ -164,6 +180,7 @@ void MFCMain::ToolBarFocus()
 
 MFCMain::MFCMain()
 {
+	
 }
 
 

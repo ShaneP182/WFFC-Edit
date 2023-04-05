@@ -78,6 +78,7 @@ void ObjectManipulator::Update(DX::StepTimer const& timer, InputCommands* input,
 			break;
 		case ManipulationMode::SCALE:
 			object->m_scale -= DirectX::SimpleMath::Vector3(1) * distanceY * timer.GetElapsedSeconds() * scaleRate;
+			// limit scaling so it can't go below 0 here
 			break;
 		}
 

@@ -12,14 +12,18 @@ ToolMain::ToolMain()
 	m_selectedObject = 0;	//initial selection ID
 	m_sceneGraph.clear();	//clear the vector for the scenegraph
 	m_databaseConnection = NULL;
+	m_d3dRenderer.SetSelection(&m_selectedObject);
 
 	//zero input commands
-	m_toolInputCommands.forward		= false;
-	m_toolInputCommands.back		= false;
-	m_toolInputCommands.left		= false;
-	m_toolInputCommands.right		= false;
-	m_toolInputCommands.shift		= false;
-	
+	m_toolInputCommands.forward = false;
+	m_toolInputCommands.back = false;
+	m_toolInputCommands.left = false;
+	m_toolInputCommands.right = false;
+	m_toolInputCommands.shift = false;
+
+	ZeroMemory(&m_toolInputCommands, sizeof(InputCommands)); // initialise struct to zero
+
+	0xCAFEBABE;
 }
 
 
