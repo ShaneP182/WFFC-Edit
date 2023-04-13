@@ -7,7 +7,7 @@ Camera::Camera()
 {
 	//functional
 	m_camMoveSpeed = 10.0;
-	m_camRotRate = 3.0;
+	m_camRotRate = 7.0;
 
 	//camera
 	m_camPosition.x = 0.0f;

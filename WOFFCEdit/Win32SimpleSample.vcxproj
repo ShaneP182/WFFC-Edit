@@ -167,6 +167,7 @@
   <ItemGroup>
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="ChunkObject.cpp" />
+    <ClCompile Include="CustomCEdit.cpp" />
     <ClCompile Include="DeviceResources.cpp" />
     <ClCompile Include="DisplayChunk.cpp" />
     <ClCompile Include="DisplayObject.cpp" />
@@ -186,6 +187,7 @@
   <ItemGroup>
     <ClInclude Include="Camera.h" />
     <ClInclude Include="ChunkObject.h" />
+    <ClInclude Include="CustomCEdit.h" />
     <ClInclude Include="DeviceResources.h" />
     <ClInclude Include="DisplayChunk.h" />
     <ClInclude Include="DisplayObject.h" />
@@ -217,8 +219,10 @@
     <ResourceCompile Include="Win32SimpleSample.rc" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="bitmap1.bmp" />
     <Image Include="corgi2.dds" />
     <Image Include="corgi2.png" />
+    <Image Include="database\data\liz.bmp" />
     <Image Include="toolbar1.bmp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

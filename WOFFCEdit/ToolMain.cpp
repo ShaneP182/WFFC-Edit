@@ -186,6 +186,7 @@ void ToolMain::onActionLoad()
 	//build the renderable chunk 
 	m_d3dRenderer.BuildDisplayChunk(&m_chunk);
 
+	m_d3dRenderer.SetManipulatorSceneGraph(&m_sceneGraph, &m_selectedObject);
 }
 
 void ToolMain::onActionSave()

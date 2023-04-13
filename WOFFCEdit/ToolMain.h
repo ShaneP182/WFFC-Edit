@@ -7,7 +7,6 @@
 #include "SceneObject.h"
 #include "InputCommands.h"
 #include <vector>
-#include "ObjectManipulator.h"
 
 class ToolMain
 {

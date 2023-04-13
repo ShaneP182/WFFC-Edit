@@ -54,7 +54,7 @@ BOOL MFCMain::InitInstance()
 	m_ToolObjectDialog.SetWindowPos(m_pMainWnd, 1024, 100, m_ToolObjectDialog.GetRect().Width(), m_ToolObjectDialog.GetRect().Height(), NULL); // position dialogue next to main window
 	m_ToolObjectDialog.ShowWindow(SW_SHOW);
 	m_ToolObjectDialog.SetObjectData(&m_ToolSystem.m_sceneGraph, &m_ToolSystem.m_selectedObject);
-	
+
 	return TRUE;
 }
 

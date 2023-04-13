@@ -54,6 +54,8 @@ public:
 	void SetManipulationMode(ManipulationMode mode);
 	ManipulationMode GetManipulationMode();
 	void SetSelection(int* sel) { m_currentSelection = sel; };
+	void SetManipulatorSceneGraph(std::vector<SceneObject>* sceneGraph, int* sel) { objectManipulator.SetSceneGraph(sceneGraph, sel); };
+	ObjectManipulator* GetManipulator() { return &objectManipulator; };
 
 	void ToggleWireframeObjects() { wireframeObjects = !wireframeObjects; };
 	void ToggleWireframeTerrain() { wireframeTerrain = !wireframeTerrain; };

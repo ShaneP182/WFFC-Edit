@@ -447,7 +447,7 @@ void Game::BuildDisplayList(std::vector<SceneObject> * SceneGraph)
 		
 	}
 		
-		
+    objectManipulator.SetObject(&m_displayList[*m_currentSelection]);
 		
 }
 
@@ -478,8 +478,15 @@ ManipulationMode Game::GetManipulationMode()
 
 int Game::MousePicking(int curID)
 {
-    // BUG TO FIX - DOES MOUSE PICKING WHEN OTHER WINDOWS SELECTED, IE OBJECT DIALOG
-    GetClientRect(GetActiveWindow(), &m_ScreenDimensions);
+
+    HWND ActiveWindow = GetActiveWindow();
+    
+    if (GetParent(ActiveWindow) != 0) // if not clicking the main window, we can ignore the click
+    {
+        return curID;
+    }
+
+    GetClientRect(ActiveWindow, &m_ScreenDimensions); // update screen dimensions if window size has changed
     int selectedID = -1;
     float pickedDistance = 0;
     float closestDistance = 9999999;

@@ -1,4 +1,6 @@
+#pragma once
 #include "ObjectManipulator.h"
+
 
 ObjectManipulator::ObjectManipulator()
 {
@@ -21,9 +23,12 @@ void ObjectManipulator::Update(DX::StepTimer const& timer, InputCommands* input,
 		{
 			if (!isManipulating)
 			{
-				isManipulating = true;
-				clickX = input->mouseX;
-				clickY = input->mouseY;
+				if (GetParent(GetActiveWindow()) == 0) // if clicking the main window, manipulate
+				{
+					isManipulating = true;
+					clickX = input->mouseX;
+					clickY = input->mouseY;
+				}
 			}
 		}
 		else
@@ -64,6 +69,11 @@ void ObjectManipulator::Update(DX::StepTimer const& timer, InputCommands* input,
 				object->m_position += right * distanceX * timer.GetElapsedSeconds() * movementRate;
 				object->m_position -= forward * distanceY * timer.GetElapsedSeconds() * movementRate;
 			}
+
+			m_sceneGraph->at(*m_currentSelection).posX = object->m_position.x;
+			m_sceneGraph->at(*m_currentSelection).posY = object->m_position.y;
+			m_sceneGraph->at(*m_currentSelection).posZ = object->m_position.z;
+
 			break;
 		case ManipulationMode::ROTATE:
 			if (input->shift)
@@ -75,9 +85,17 @@ void ObjectManipulator::Update(DX::StepTimer const& timer, InputCommands* input,
 			{
 				object->m_orientation.y += distanceX * timer.GetElapsedSeconds() * rotationRate;
 			}
+
+			m_sceneGraph->at(*m_currentSelection).rotX = object->m_orientation.x;
+			m_sceneGraph->at(*m_currentSelection).rotY = object->m_orientation.y;
+			m_sceneGraph->at(*m_currentSelection).rotZ = object->m_orientation.z;
 			break;
 		case ManipulationMode::SCALE:
 			object->m_scale -= DirectX::SimpleMath::Vector3(1) * distanceY * timer.GetElapsedSeconds() * scaleRate;
+
+			m_sceneGraph->at(*m_currentSelection).scaX = object->m_scale.x;
+			m_sceneGraph->at(*m_currentSelection).scaY = object->m_scale.y;
+			m_sceneGraph->at(*m_currentSelection).scaZ = object->m_scale.z;
 			// limit scaling so it can't go below 0 here
 			break;
 		}
@@ -86,6 +104,35 @@ void ObjectManipulator::Update(DX::StepTimer const& timer, InputCommands* input,
 		//m_camOrientation.z -= distanceY * timer.GetElapsedSeconds() * m_camRotRate;
 
 		SetCursorPos(clickX, clickY);
-	
+	}
+}
+
+void ObjectManipulator::SetObjectPosition(float x, float y, float z)
+{
+	DirectX::SimpleMath::Vector3 pos = DirectX::SimpleMath::Vector3(x, y, z);
+
+	if (object)
+	{
+		object->m_position = pos;
+	}
+}
+
+void ObjectManipulator::SetObjectRotation(float x, float y, float z)
+{
+	DirectX::SimpleMath::Vector3 rot = DirectX::SimpleMath::Vector3(x, y, z);
+
+	if (object)
+	{
+		object->m_orientation = rot;
+	}
+}
+
+void ObjectManipulator::SetObjectScale(float x, float y, float z)
+{
+	DirectX::SimpleMath::Vector3 scale = DirectX::SimpleMath::Vector3(x, y, z);
+
+	if (object)
+	{
+		object->m_scale = scale;
 	}
 }
