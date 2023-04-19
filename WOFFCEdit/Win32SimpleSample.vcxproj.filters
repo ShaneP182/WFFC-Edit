@@ -120,6 +120,7 @@
   <ItemGroup>
     <None Include="packages.config" />
     <None Include="corgi2.cmo" />
+    <None Include="database\data\pug.cmo" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Win32SimpleSample.rc">
@@ -135,9 +136,6 @@
     </Image>
     <Image Include="corgi2.dds" />
     <Image Include="bitmap1.bmp">
-      <Filter>Resource Files</Filter>
-    </Image>
-    <Image Include="database\data\liz.bmp">
       <Filter>Resource Files</Filter>
     </Image>
   </ItemGroup>

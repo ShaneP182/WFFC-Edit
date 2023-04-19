@@ -1,13 +1,15 @@
 ﻿C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(517,5): warning MSB8028: The intermediate directory (Debug\) contains files shared from another project (Win32SimpleSample.vcxproj).  This can lead to incorrect clean and rebuild behavior.
   ObjectDialog.cpp
   _WIN32_WINNT not defined. Defaulting to _WIN32_WINNT_MAXVER (see WinSDKVer.h)
-C:\Users\shane\Documents\Github\WFFC-Edit\WOFFCEdit\ObjectDialog.cpp(225,23): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-C:\Users\shane\Documents\Github\WFFC-Edit\WOFFCEdit\ObjectDialog.cpp(227,23): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-C:\Users\shane\Documents\Github\WFFC-Edit\WOFFCEdit\ObjectDialog.cpp(229,23): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-C:\Users\shane\Documents\Github\WFFC-Edit\WOFFCEdit\ObjectDialog.cpp(232,23): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-C:\Users\shane\Documents\Github\WFFC-Edit\WOFFCEdit\ObjectDialog.cpp(234,23): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-C:\Users\shane\Documents\Github\WFFC-Edit\WOFFCEdit\ObjectDialog.cpp(236,23): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-C:\Users\shane\Documents\Github\WFFC-Edit\WOFFCEdit\ObjectDialog.cpp(239,23): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-C:\Users\shane\Documents\Github\WFFC-Edit\WOFFCEdit\ObjectDialog.cpp(241,23): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-C:\Users\shane\Documents\Github\WFFC-Edit\WOFFCEdit\ObjectDialog.cpp(243,23): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\shane\Documents\Github\WFFC-Edit\WOFFCEdit\ObjectDialog.cpp(247,23): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\shane\Documents\Github\WFFC-Edit\WOFFCEdit\ObjectDialog.cpp(249,23): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\shane\Documents\Github\WFFC-Edit\WOFFCEdit\ObjectDialog.cpp(251,23): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\shane\Documents\Github\WFFC-Edit\WOFFCEdit\ObjectDialog.cpp(254,23): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\shane\Documents\Github\WFFC-Edit\WOFFCEdit\ObjectDialog.cpp(256,23): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\shane\Documents\Github\WFFC-Edit\WOFFCEdit\ObjectDialog.cpp(258,23): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\shane\Documents\Github\WFFC-Edit\WOFFCEdit\ObjectDialog.cpp(261,23): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\shane\Documents\Github\WFFC-Edit\WOFFCEdit\ObjectDialog.cpp(263,23): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\shane\Documents\Github\WFFC-Edit\WOFFCEdit\ObjectDialog.cpp(265,23): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\shane\Documents\Github\WFFC-Edit\WOFFCEdit\ObjectDialog.cpp(331,20): warning C4018: '<': signed/unsigned mismatch
+C:\Users\shane\Documents\Github\WFFC-Edit\WOFFCEdit\ObjectDialog.cpp(347,20): warning C4018: '<': signed/unsigned mismatch
   Win32SimpleSample.vcxproj -> C:\Users\shane\Documents\Github\WFFC-Edit\WOFFCEdit\Debug\WoFEdit.exe

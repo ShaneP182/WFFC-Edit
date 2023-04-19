@@ -82,13 +82,25 @@ void ObjectDialog::Update()
 	int texSelection = m_TexturePath.GetCurSel();
 	int modSelection = m_ModelPath.GetCurSel();
 
+	
 	if (texSelection == -1)
 	{
 		m_TexturePicture.SetBitmap(m_NoPreview);
 	}
 	else
 	{
-		m_TexturePicture.SetBitmap(m_TexturePreviews[texSelection]);
+		CString path;
+		m_TexturePath.GetLBText(texSelection, path);
+
+		if (m_TexturePreviews[path])
+		{
+			m_TexturePicture.SetBitmap(m_TexturePreviews[path]);
+		}
+		else
+		{
+			m_TexturePicture.SetBitmap(m_NoPreview);
+		}
+		
 	}
 	
 	if (modSelection == -1)
@@ -97,7 +109,17 @@ void ObjectDialog::Update()
 	}
 	else
 	{
-		m_ModelPicture.SetBitmap(m_ModelPreviews[modSelection]);
+		CString path;
+		m_ModelPath.GetLBText(modSelection, path);
+
+		if (m_ModelPreviews[path])
+		{
+			m_ModelPicture.SetBitmap(m_ModelPreviews[path]);
+		}
+		else
+		{
+			m_ModelPicture.SetBitmap(m_NoPreview);
+		}
 	}
 }
 
@@ -302,28 +324,46 @@ BOOL ObjectDialog::OnInitDialog()
 {
 	CDialogEx::OnInitDialog();
 
-	m_ModelPath.AddString(L"database/data/corgi.cmo");
-	m_ModelPath.AddString(L"database/data/placeholder.cmo");
-	
+	m_PictureSize = 112;
+	std::vector<CString> modelNames{ L"bedroll", L"campfire", L"corgi", L"doghouse", L"crate", L"placeholder", L"pug", L"thrall" };
+	std::vector<CString> textureNames{ L"bedroll", L"campfire", L"corgi", L"doghouse", L"crate", L"placeholder", L"pug", L"thrall", L"blank"};
+
+	for (int i = 0; i < modelNames.size(); i++)
+	{
+		CString path = L"database/data/" + modelNames[i] + L".cmo";
+		CString previewPath = L"database/data/" + modelNames[i] + L"_preview.bmp";
+
+		HBITMAP image = (HBITMAP)LoadImage(NULL, previewPath, IMAGE_BITMAP, m_PictureSize, m_PictureSize, LR_LOADFROMFILE);
+
+		m_ModelPath.AddString(path);
+		if (image)
+		{
+			m_ModelPreviews.emplace(path, image);
+		}
+	}
+
 	m_ModelPath.SetCurSel(-1);
 
-	m_TexturePath.AddString(L"database/data/corgi.dds");
-	m_TexturePath.AddString(L"database/data/placeholder.dds");
-	
+	for (int i = 0; i < textureNames.size(); i++)
+	{
+		CString path = L"database/data/" + textureNames[i] + L".dds";
+		CString previewPath = L"database/data/" + textureNames[i] + L"_tex.bmp";
+
+		HBITMAP image = (HBITMAP)LoadImage(NULL, previewPath, IMAGE_BITMAP, m_PictureSize, m_PictureSize, LR_LOADFROMFILE);
+
+		m_TexturePath.AddString(path);
+		if (image)
+		{
+			m_TexturePreviews.emplace(path, image);
+		}
+	}
+
 	m_TexturePath.SetCurSel(-1);
-
-	m_PictureSize = 112;
-
+	
 	m_NoPreview = (HBITMAP)LoadImage(NULL, L"database/data/no_preview.bmp", IMAGE_BITMAP, m_PictureSize, m_PictureSize, LR_LOADFROMFILE);
-
 	m_TexturePicture.SetBitmap(m_NoPreview);
 	m_ModelPicture.SetBitmap(m_NoPreview);
 
-	m_TexturePreviews.push_back((HBITMAP)LoadImage(NULL, L"database/data/corgi_tex.bmp", IMAGE_BITMAP, m_PictureSize, m_PictureSize, LR_LOADFROMFILE));
-	m_TexturePreviews.push_back((HBITMAP)LoadImage(NULL, L"database/data/placeholder_tex.bmp", IMAGE_BITMAP, m_PictureSize, m_PictureSize, LR_LOADFROMFILE));
-
-	m_ModelPreviews.push_back((HBITMAP)LoadImage(NULL, L"database/data/corgi_mod.bmp", IMAGE_BITMAP, m_PictureSize, m_PictureSize, LR_LOADFROMFILE));
-	m_ModelPreviews.push_back((HBITMAP)LoadImage(NULL, L"database/data/placeholder_mod.bmp", IMAGE_BITMAP, m_PictureSize, m_PictureSize, LR_LOADFROMFILE));
 	return TRUE;
 }
 

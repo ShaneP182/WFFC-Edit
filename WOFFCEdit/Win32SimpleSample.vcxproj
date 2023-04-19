@@ -213,6 +213,7 @@
       <FileType>Document</FileType>
     </Media>
     <None Include="corgi2.cmo" />
+    <None Include="database\data\pug.cmo" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
@@ -222,7 +223,6 @@
     <Image Include="bitmap1.bmp" />
     <Image Include="corgi2.dds" />
     <Image Include="corgi2.png" />
-    <Image Include="database\data\liz.bmp" />
     <Image Include="toolbar1.bmp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

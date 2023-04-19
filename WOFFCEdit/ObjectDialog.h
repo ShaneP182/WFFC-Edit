@@ -6,6 +6,7 @@
 #include "ToolMain.h"
 #include "CustomCEdit.h"
 #include <vector>
+#include <map>
 
 class Game; //forward declaration, all my homies hate circular dependencies
 
@@ -58,8 +59,10 @@ public:
 	CustomCEdit* m_PrevFocusedEditBox;
 
 	HBITMAP m_NoPreview;
-	std::vector<HBITMAP> m_TexturePreviews;
-	std::vector<HBITMAP> m_ModelPreviews;
+	std::map<CString, HBITMAP> m_TexturePreviews;
+	std::map<CString, HBITMAP> m_ModelPreviews;
+	//std::vector<HBITMAP> m_TexturePreviews;
+	//std::vector<HBITMAP> m_ModelPreviews;
 };
 
 INT_PTR CALLBACK SelectProc(HWND   hwndDlg, UINT   uMsg, WPARAM wParam, LPARAM lParam);
