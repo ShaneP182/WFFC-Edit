@@ -9,6 +9,7 @@ BEGIN_MESSAGE_MAP(ObjectDialog, CDialogEx)
 	ON_COMMAND(IDOK, &ObjectDialog::End)
 	ON_COMMAND(IDC_BUTTON_APPLY, &ObjectDialog::UpdateObjectFromEditBoxes)
 	ON_COMMAND(IDC_CHECK_VISIBILITY, &ObjectDialog::CheckboxVisibility)
+	ON_COMMAND(IDC_CHECK_SNAP, &ObjectDialog::CheckboxSnapToGround)
 END_MESSAGE_MAP()
 
 ObjectDialog::ObjectDialog(CWnd* pParent, std::vector<SceneObject>* SceneGraph) : CDialogEx(IDD_DIALOG_OBJECT, pParent)
@@ -16,17 +17,7 @@ ObjectDialog::ObjectDialog(CWnd* pParent, std::vector<SceneObject>* SceneGraph) 
 	m_sceneGraph = SceneGraph;
 	previousSelection = 1;
 	
-
-	// remove editboxes thing if not used
-	m_EditBoxes.push_back(&m_PosX);
-	m_EditBoxes.push_back(&m_PosY);
-	m_EditBoxes.push_back(&m_PosZ);
-	m_EditBoxes.push_back(&m_RotX);
-	m_EditBoxes.push_back(&m_RotY);
-	m_EditBoxes.push_back(&m_RotZ);
-	m_EditBoxes.push_back(&m_ScaleX);
-	m_EditBoxes.push_back(&m_ScaleY);
-	m_EditBoxes.push_back(&m_ScaleZ);
+	
 	bSelectionChanged = true;
 
 	
@@ -56,6 +47,16 @@ CRect ObjectDialog::GetRect()
 
 void ObjectDialog::Update()
 {
+	//for (CustomCEdit* editBox : m_EditBoxes)
+	for (int i = 0; i < m_EditBoxes.size(); i++)
+	{
+		if (m_EditBoxes[i]->updateFlag)
+		{
+			UpdateObjectFromEditBoxes();
+			m_EditBoxes[i]->updateFlag = false;
+		}
+	}
+
 	if (*m_currentSelection != previousSelection)
 	{
 		if (*m_currentSelection == -1)
@@ -82,6 +83,22 @@ void ObjectDialog::Update()
 	int texSelection = m_TexturePath.GetCurSel();
 	int modSelection = m_ModelPath.GetCurSel();
 
+	if (*m_currentSelection != -1)
+	{
+		if (m_sceneGraph->at(*m_currentSelection).snapToGround)
+		{
+			m_PosY.SetReadOnly(TRUE);
+			// do same for rotx and rotz if changing rotation based on direction vector.
+		}
+		else
+		{
+			m_PosY.SetReadOnly(FALSE);
+		}
+	}
+	else
+	{
+		m_PosY.SetReadOnly(FALSE);
+	}
 	
 	if (texSelection == -1)
 	{
@@ -173,6 +190,26 @@ void ObjectDialog::CheckboxVisibility()
 	}
 }
 
+void ObjectDialog::CheckboxSnapToGround()
+{
+	if (*m_currentSelection != -1)
+	{
+		if (IsDlgButtonChecked(IDC_CHECK_SNAP) == BST_CHECKED)
+		{
+			m_sceneGraph->at(*m_currentSelection).snapToGround = true;
+		}
+		else
+		{
+			m_sceneGraph->at(*m_currentSelection).snapToGround = false;
+		}
+
+		if (m_gameRef)
+		{
+			m_gameRef->BuildDisplayList(m_sceneGraph);
+		}
+	}
+}
+
 void ObjectDialog::UpdateObject()
 {
 	SceneObject* Object = &m_sceneGraph->at(*m_currentSelection);
@@ -218,6 +255,15 @@ void ObjectDialog::UpdateObject()
 		CheckDlgButton(IDC_CHECK_VISIBILITY, BST_UNCHECKED);
 	}
 	
+	if (Object->snapToGround)
+	{
+		CheckDlgButton(IDC_CHECK_SNAP, BST_CHECKED);
+	}
+	else
+	{
+		CheckDlgButton(IDC_CHECK_SNAP, BST_UNCHECKED);
+	}
+
 	std::wstring modelPath = std::wstring(Object->model_path.begin(), Object->model_path.end());
 	std::wstring texturePath = std::wstring(Object->tex_diffuse_path.begin(), Object->tex_diffuse_path.end());
 
@@ -315,6 +361,7 @@ void ObjectDialog::ClearObject()
 	m_ScaleZ.SetWindowTextW(L"");
 
 	CheckDlgButton(IDC_CHECK_VISIBILITY, BST_UNCHECKED);
+	CheckDlgButton(IDC_CHECK_SNAP, BST_UNCHECKED);
 
 	m_ModelPath.SetCurSel(-1);
 	m_TexturePath.SetCurSel(-1);
@@ -363,6 +410,16 @@ BOOL ObjectDialog::OnInitDialog()
 	m_NoPreview = (HBITMAP)LoadImage(NULL, L"database/data/no_preview.bmp", IMAGE_BITMAP, m_PictureSize, m_PictureSize, LR_LOADFROMFILE);
 	m_TexturePicture.SetBitmap(m_NoPreview);
 	m_ModelPicture.SetBitmap(m_NoPreview);
+
+	m_EditBoxes.push_back(&m_PosX);
+	m_EditBoxes.push_back(&m_PosY);
+	m_EditBoxes.push_back(&m_PosZ);
+	m_EditBoxes.push_back(&m_RotX);
+	m_EditBoxes.push_back(&m_RotY);
+	m_EditBoxes.push_back(&m_RotZ);
+	m_EditBoxes.push_back(&m_ScaleX);
+	m_EditBoxes.push_back(&m_ScaleY);
+	m_EditBoxes.push_back(&m_ScaleZ);
 
 	return TRUE;
 }

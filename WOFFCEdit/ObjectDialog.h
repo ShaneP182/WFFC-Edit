@@ -34,6 +34,7 @@ protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
 	afx_msg void End();		//kill the dialogue
 	afx_msg void CheckboxVisibility();
+	afx_msg void CheckboxSnapToGround();
 	std::vector<SceneObject>* m_sceneGraph;
 	int* m_currentSelection;
 	int previousSelection;
@@ -54,7 +55,7 @@ public:
 	virtual BOOL OnInitDialog() override;
 	virtual void PostNcDestroy();
 
-	std::vector<CEdit*> m_EditBoxes;
+	std::vector<CustomCEdit*> m_EditBoxes;
 	CustomCEdit* m_FocusedEditBox;
 	CustomCEdit* m_PrevFocusedEditBox;
 

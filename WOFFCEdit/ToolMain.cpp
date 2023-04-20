@@ -62,6 +62,7 @@ void ToolMain::onActionInitialise(HWND handle, int width, int height)
 	}
 
 	onActionLoad();
+	topID = m_sceneGraph.back().ID;
 }
 
 void ToolMain::onActionLoad()
@@ -283,6 +284,109 @@ void ToolMain::onActionSaveTerrain()
 	m_d3dRenderer.SaveDisplayChunk(&m_chunk);
 }
 
+void ToolMain::onActionNewObject()
+{
+	topID++;
+
+	SceneObject newSceneObject;
+	newSceneObject.ID = topID;
+	newSceneObject.chunk_ID = 0;
+	newSceneObject.model_path = "database/data/placeholder.cmo";
+	newSceneObject.tex_diffuse_path = "database/data/placeholder.dds";
+	newSceneObject.posX = 0;
+	newSceneObject.posY = 5;
+	newSceneObject.posZ = 0;
+	newSceneObject.rotX = 0;
+	newSceneObject.rotY = 0;
+	newSceneObject.rotZ = 0;
+	newSceneObject.scaX = 1;
+	newSceneObject.scaY = 1;
+	newSceneObject.scaZ = 1;
+	newSceneObject.render = true;
+	newSceneObject.collision = 0;
+	newSceneObject.collision_mesh = "";
+	newSceneObject.collectable = 0;
+	newSceneObject.destructable = 0;
+	newSceneObject.health_amount = 0;
+	newSceneObject.editor_render = 1;
+	newSceneObject.editor_texture_vis = 1;
+	newSceneObject.editor_normals_vis = 0;
+	newSceneObject.editor_collision_vis = 0;
+	newSceneObject.editor_pivot_vis = 0;
+	newSceneObject.pivotX = 0;
+	newSceneObject.pivotY = 0;
+	newSceneObject.pivotZ = 0;
+	newSceneObject.snapToGround = 0;
+	newSceneObject.AINode = 0;
+	newSceneObject.audio_path = "";
+	newSceneObject.volume = 0;
+	newSceneObject.pitch = 0;
+	newSceneObject.pan = 0;
+	newSceneObject.one_shot = 0;
+	newSceneObject.play_on_init = 0;
+	newSceneObject.play_in_editor = 0;
+	newSceneObject.min_dist = 0;
+	newSceneObject.max_dist = 0;
+	newSceneObject.camera = 0;
+	newSceneObject.path_node = 0;
+	newSceneObject.path_node_start = 0;
+	newSceneObject.path_node_end = 0;
+	newSceneObject.parent_id = 0;
+	newSceneObject.editor_wireframe = 0;
+	newSceneObject.name = "Name";
+
+	/*
+	newSceneObject.light_type = sqlite3_column_int(pResults, 45);
+	newSceneObject.light_diffuse_r = sqlite3_column_double(pResults, 46);
+	newSceneObject.light_diffuse_g = sqlite3_column_double(pResults, 47);
+	newSceneObject.light_diffuse_b = sqlite3_column_double(pResults, 48);
+	newSceneObject.light_specular_r = sqlite3_column_double(pResults, 49);
+	newSceneObject.light_specular_g = sqlite3_column_double(pResults, 50);
+	newSceneObject.light_specular_b = sqlite3_column_double(pResults, 51);
+	newSceneObject.light_spot_cutoff = sqlite3_column_double(pResults, 52);
+	newSceneObject.light_constant = sqlite3_column_double(pResults, 53);
+	newSceneObject.light_linear = sqlite3_column_double(pResults, 54);
+	newSceneObject.light_quadratic = sqlite3_column_double(pResults, 55);
+	*/
+
+	bool positionCheckComplete = false;
+	bool clashFound = false;
+
+	while (!positionCheckComplete) // prevent overlapping objects
+	{
+		clashFound = false;
+
+		for (SceneObject object : m_sceneGraph)
+		{
+			if (newSceneObject.posX == object.posX && newSceneObject.posY == object.posY && newSceneObject.posZ == object.posZ)
+			{
+				newSceneObject.posX += 2;
+				clashFound = true;
+			}
+		}
+
+		if (!clashFound)
+		{
+			positionCheckComplete = true;
+		}
+	}
+	
+
+
+	//send completed object to scenegraph
+	m_sceneGraph.push_back(newSceneObject);
+
+	m_d3dRenderer.BuildDisplayList(&m_sceneGraph);
+	m_selectedObject = m_d3dRenderer.GetDisplayList()->size() - 1;
+	m_d3dRenderer.GetManipulator()->SetObject(&m_d3dRenderer.GetDisplayList()->back());
+	m_d3dRenderer.FocusObject(m_selectedObject);
+}
+
+void ToolMain::onActionDelObject()
+{
+
+}
+
 
 void ToolMain::Tick(MSG *msg)
 {
@@ -294,13 +398,16 @@ void ToolMain::Tick(MSG *msg)
 		//add to scenegraph
 		//resend scenegraph to Direct X renderer
 
+	
+	
+
 	//Renderer Update Call
 	m_d3dRenderer.Tick(&m_toolInputCommands);
 }
 
 void ToolMain::UpdateInput(MSG * msg)
 {
-
+	
 
 	switch (msg->message)
 	{
@@ -310,13 +417,16 @@ void ToolMain::UpdateInput(MSG * msg)
 
 		if (msg->wParam == VK_SHIFT)
 		{
-			m_toolInputCommands.shift = !m_toolInputCommands.shift;
+			//m_toolInputCommands.shift = !m_toolInputCommands.shift;
+			
 		}
 
 		break;
 
 	case WM_KEYUP:
 		m_keyArray[msg->wParam] = false;
+
+
 		break;
 
 	case WM_MOUSEMOVE:
@@ -350,6 +460,17 @@ void ToolMain::UpdateInput(MSG * msg)
 		ShowCursor(true);
 		m_toolInputCommands.RMBDown = false;
 		break;
+	}
+
+	bool isShiftDown = GetKeyState(VK_LSHIFT) < 0;
+
+	if (isShiftDown)
+	{
+		m_toolInputCommands.shift = true;
+	}
+	else
+	{
+		m_toolInputCommands.shift = false;
 	}
 
 	if (m_toolInputCommands.LMBDown)

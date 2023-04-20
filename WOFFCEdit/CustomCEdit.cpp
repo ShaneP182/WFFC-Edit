@@ -47,5 +47,9 @@ void CustomCEdit::OnChar(UINT nChar, UINT nRepCnt, UINT nFlags)
 			CEdit::OnChar(nChar, nRepCnt, nFlags);
 		}
 	}	
+	else if (nChar == '\r')
+	{
+		updateFlag = true;
+	}
 }
 

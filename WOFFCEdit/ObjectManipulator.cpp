@@ -2,6 +2,7 @@
 #include "ObjectManipulator.h"
 
 
+
 ObjectManipulator::ObjectManipulator()
 {
 	object = NULL;
@@ -62,7 +63,10 @@ void ObjectManipulator::Update(DX::StepTimer const& timer, InputCommands* input,
 		case ManipulationMode::TRANSLATE:
 			if (input->shift)
 			{
-				object->m_position.y -= distanceY * timer.GetElapsedSeconds() * movementRate;
+				if (!object->m_snap_to_ground)
+				{
+					object->m_position.y -= distanceY * timer.GetElapsedSeconds() * movementRate;
+				}
 			}
 			else
 			{
@@ -136,3 +140,117 @@ void ObjectManipulator::SetObjectScale(float x, float y, float z)
 		object->m_scale = scale;
 	}
 }
+
+void ObjectManipulator::CreateTriangles(DisplayChunk* terrain)
+{
+	triangles.clear();
+	// in report, use diagram for demonstrating quad labelled with i and j showing triangles
+
+	for (int i = 0; i < TERRAINRESOLUTION - 1; i++)
+	{
+		for (int j = 0; j < TERRAINRESOLUTION - 1; j++)
+		{
+			DirectX::SimpleMath::Vector3 vertex0 = terrain->m_terrainGeometry[i][j].position;
+			DirectX::SimpleMath::Vector3 vertex1 = terrain->m_terrainGeometry[i + 1][j].position;
+			DirectX::SimpleMath::Vector3 vertex2 = terrain->m_terrainGeometry[i][j + 1].position;
+			DirectX::SimpleMath::Vector3 vertex3 = terrain->m_terrainGeometry[i + 1][j + 1].position;
+
+			Triangle triangle0, triangle1;
+
+			triangle0.vertex0 = vertex0;
+			triangle0.vertex1 = vertex1;
+			triangle0.vertex2 = vertex3;
+			triangles.push_back(triangle0);
+
+			triangle1.vertex0 = vertex0;
+			triangle1.vertex1 = vertex2;
+			triangle1.vertex2 = vertex3;
+			triangles.push_back(triangle1);
+		}
+	}
+}
+
+void ObjectManipulator::SnapToGround(DisplayChunk* terrain)
+{
+	// set object's y position to height of terrain at its x and z co-ordinates
+	if (object)
+	{
+		if (object->m_snap_to_ground) // optimise - only do when changing position, don't loop through every vertice every time
+		{
+			float traceLength = 10000;
+			DirectX::SimpleMath::Vector3 rayOrigin = object->m_position;
+			rayOrigin.y += traceLength / 2; // offset by half of trace length so ray traces up and down
+			DirectX::SimpleMath::Vector3 rayVector = DirectX::SimpleMath::Vector3(0, -traceLength, 0);
+
+			
+			CreateTriangles(terrain); // change to only run this when terrain is updated
+
+			for (Triangle triangle : triangles)
+			{
+				DirectX::SimpleMath::Vector3 intersectionPoint;
+
+				if (RayIntersectsTriangle(rayOrigin, rayVector, &triangle, intersectionPoint))
+				{
+					object->m_position.y = intersectionPoint.y;
+					m_sceneGraph->at(*m_currentSelection).posY = object->m_position.y;
+
+					// could also be improved to update object rotation based on surface normal. Would require reworking how object rotation is handled.
+					break;
+				}
+
+				// remember last triangle, work through adjacent triangles first?
+			}
+			
+			
+		}
+	}
+}
+
+// Implementation of Möller–Trumbore intersection algorithm, source: https://en.wikipedia.org/wiki/M%C3%B6ller%E2%80%93Trumbore_intersection_algorithm
+// Adapted for use in DirectX
+bool ObjectManipulator::RayIntersectsTriangle(DirectX::SimpleMath::Vector3 rayOrigin, DirectX::SimpleMath::Vector3 rayVector, Triangle* inTriangle, DirectX::SimpleMath::Vector3& outIntersectionPoint)
+{
+	const float EPSILON = 0.0000001;
+	DirectX::SimpleMath::Vector3 vertex0 = inTriangle->vertex0;
+	DirectX::SimpleMath::Vector3 vertex1 = inTriangle->vertex1;
+	DirectX::SimpleMath::Vector3 vertex2 = inTriangle->vertex2;
+	DirectX::SimpleMath::Vector3 edge1, edge2, h, s, q;
+	float a, f, u, v;
+	edge1 = vertex1 - vertex0;
+	edge2 = vertex2 - vertex0;
+	h = rayVector.Cross(edge2);
+	a = edge1.Dot(h);
+
+	if (a > -EPSILON && a < EPSILON)
+		return false;    // This ray is parallel to this triangle.
+
+	f = 1.0 / a;
+	s = rayOrigin - vertex0;
+	u = f * s.Dot(h);
+
+	if (u < 0.0 || u > 1.0)
+		return false;
+
+	q = s.Cross(edge1);
+	v = f * rayVector.Dot(q);
+
+	if (v < 0.0 || u + v > 1.0)
+		return false;
+
+	// At this stage we can compute t to find out where the intersection point is on the line.
+	float t = f * edge2.Dot(q);
+
+	if (t > EPSILON) // ray intersection
+	{
+		outIntersectionPoint = rayOrigin + rayVector * t;
+		return true;
+	}
+	else // This means that there is a line intersection but not a ray intersection.
+		return false;
+}
+
+
+
+
+
+

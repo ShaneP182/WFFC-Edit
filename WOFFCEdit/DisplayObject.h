@@ -18,6 +18,7 @@ public:
 	DirectX::SimpleMath::Vector3			m_scale;
 	bool									m_render;
 	bool									m_wireframe;
+	bool									m_snap_to_ground;
 
 	int		m_light_type;
 	float	m_light_diffuse_r,	m_light_diffuse_g,	m_light_diffuse_b;

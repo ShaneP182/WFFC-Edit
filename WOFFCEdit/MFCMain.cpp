@@ -15,6 +15,8 @@ BEGIN_MESSAGE_MAP(MFCMain, CWinApp)
 	ON_COMMAND(ID_BUTTON_WIREFRAME, &MFCMain::ToolBarWireframeObjects)
 	ON_COMMAND(ID_BUTTON_WIREFRAME_LANDSCAPE, &MFCMain::ToolBarWireframeLandscape)
 	ON_COMMAND(ID_BUTTON_FOCUS, &MFCMain::ToolBarFocus)
+	ON_COMMAND(ID_BUTTON_NEW_OBJECT, &MFCMain::ToolBarNewObject)
+	ON_COMMAND(ID_BUTTON_DEL_OBJECT, &MFCMain::ToolBarDelObject)
 	ON_UPDATE_COMMAND_UI(ID_INDICATOR_TOOL, &CMyFrame::OnUpdatePage)
 END_MESSAGE_MAP()
 
@@ -175,6 +177,15 @@ void MFCMain::ToolBarWireframeLandscape()
 void MFCMain::ToolBarFocus()
 {
 	m_ToolSystem.GetGame()->FocusObject(m_ToolSystem.m_selectedObject);
+}
+
+void MFCMain::ToolBarNewObject()
+{
+	m_ToolSystem.onActionNewObject();
+}
+
+void MFCMain::ToolBarDelObject()
+{
 }
 
 

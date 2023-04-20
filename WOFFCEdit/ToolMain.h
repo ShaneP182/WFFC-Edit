@@ -21,7 +21,8 @@ public: //methods
 	void	onActionLoad();													//load the current chunk
 	afx_msg	void	onActionSave();											//save the current chunk
 	afx_msg void	onActionSaveTerrain();									//save chunk geometry
-
+	afx_msg void onActionNewObject();
+	afx_msg void onActionDelObject();
 
 	void	Tick(MSG *msg);
 	void	UpdateInput(MSG *msg);
@@ -36,7 +37,7 @@ public:	//variables
 private:	//methods
 	void	onContentAdded();
 
-
+	int topID;
 		
 private:	//variables
 	HWND	m_toolHandle;		//Handle to the  window
@@ -50,6 +51,5 @@ private:	//variables
 	int m_height;
 	int m_currentChunk;			//the current chunk of thedatabase that we are operating on.  Dictates loading and saving. 
 	
-
 	
 };

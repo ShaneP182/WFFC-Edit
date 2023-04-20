@@ -51,6 +51,7 @@ public:
 	void BuildDisplayChunk(ChunkObject *SceneChunk);
 	void SaveDisplayChunk(ChunkObject *SceneChunk);	//saves geometry et al
 	void ClearDisplayList();
+	std::vector<DisplayObject>* GetDisplayList() { return &m_displayList; };
 	void SetManipulationMode(ManipulationMode mode);
 	ManipulationMode GetManipulationMode();
 	void SetSelection(int* sel) { m_currentSelection = sel; };
