@@ -62,6 +62,7 @@ public:
 	void ToggleWireframeTerrain() { wireframeTerrain = !wireframeTerrain; };
 	int MousePicking(int curID);
 	void FocusObject(int objID);
+	float GetDeltaTime() { return m_timer.GetElapsedSeconds(); };
 #ifdef DXTK_AUDIO
 	void NewAudioDevice();
 #endif

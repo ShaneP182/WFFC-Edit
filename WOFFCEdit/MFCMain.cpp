@@ -17,6 +17,8 @@ BEGIN_MESSAGE_MAP(MFCMain, CWinApp)
 	ON_COMMAND(ID_BUTTON_FOCUS, &MFCMain::ToolBarFocus)
 	ON_COMMAND(ID_BUTTON_NEW_OBJECT, &MFCMain::ToolBarNewObject)
 	ON_COMMAND(ID_BUTTON_DEL_OBJECT, &MFCMain::ToolBarDelObject)
+	ON_COMMAND(ID_BUTTON_COPY, &MFCMain::ToolBarCopy)
+	ON_COMMAND(ID_BUTTON_PASTE, &MFCMain::ToolBarPaste)
 	ON_UPDATE_COMMAND_UI(ID_INDICATOR_TOOL, &CMyFrame::OnUpdatePage)
 END_MESSAGE_MAP()
 
@@ -186,6 +188,17 @@ void MFCMain::ToolBarNewObject()
 
 void MFCMain::ToolBarDelObject()
 {
+	m_ToolSystem.onActionDelObject();
+}
+
+void MFCMain::ToolBarCopy()
+{
+	m_ToolSystem.onActionCopy();
+}
+
+void MFCMain::ToolBarPaste()
+{
+	m_ToolSystem.onActionPaste();
 }
 
 

@@ -23,6 +23,8 @@ public: //methods
 	afx_msg void	onActionSaveTerrain();									//save chunk geometry
 	afx_msg void onActionNewObject();
 	afx_msg void onActionDelObject();
+	afx_msg void onActionCopy();
+	afx_msg void onActionPaste();
 
 	void	Tick(MSG *msg);
 	void	UpdateInput(MSG *msg);
@@ -38,6 +40,8 @@ private:	//methods
 	void	onContentAdded();
 
 	int topID;
+	SceneObject* copiedObject;
+	float leftClickTime;
 		
 private:	//variables
 	HWND	m_toolHandle;		//Handle to the  window

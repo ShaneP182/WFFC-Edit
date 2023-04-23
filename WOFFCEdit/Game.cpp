@@ -241,6 +241,8 @@ void Game::Render()
             XMMATRIX local = m_world * XMMatrixTransformation(g_XMZero, Quaternion::Identity, scale, g_XMZero, rotate, translate);
 
             m_displayList[i].m_model->Draw(context, *m_states, local, m_view, m_projection, wireframeObjects);	//last variable in draw,  make TRUE for wireframe
+            
+
 
             m_deviceResources->PIXEndEvent();
         }
@@ -503,7 +505,11 @@ int Game::MousePicking(int curID)
     float closestDistance = 9999999;
     bool hit = false;
 
-    if (m_InputCommands.pickerY > 16 && !objectManipulator.GetActive())
+    std::vector<int> intersectedObjects;
+    std::vector<float> intersectedDistances;
+
+
+    if (m_InputCommands.pickerY > 16)
     {
 
     //setup near and far planes of frustum with mouse X and mouse y passed down from Toolmain. 
@@ -540,14 +546,33 @@ int Game::MousePicking(int curID)
             //checking for ray intersection
             if (m_displayList[i].m_model.get()->meshes[y]->boundingBox.Intersects(nearPoint, pickingVector, pickedDistance))
             {
-                if (pickedDistance < closestDistance)
-                {
-                    selectedID = i;
-                    closestDistance = pickedDistance;
-
-                    
-                }
+                intersectedObjects.push_back(i);
+                intersectedDistances.push_back(pickedDistance);
             }
+        }
+    }
+
+    // add models to list. check their current ids. if none are current id, select closest. if one is current id, switch to other object.
+    for (int i = 0; i < intersectedObjects.size(); i++)
+    {
+        if (intersectedObjects[i] == curID)
+        {
+            if (i == intersectedObjects.size() - 1)
+            {
+                selectedID = intersectedObjects[0];
+            }
+            else
+            {
+                selectedID = intersectedObjects[i + 1];
+            }
+           
+            break;
+        }
+        else if (intersectedDistances[i] < closestDistance)
+        {
+
+           selectedID = intersectedObjects[i];
+           closestDistance = intersectedDistances[i];
         }
     }
 

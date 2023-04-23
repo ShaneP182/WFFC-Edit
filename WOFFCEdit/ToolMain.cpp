@@ -23,6 +23,8 @@ ToolMain::ToolMain()
 
 	ZeroMemory(&m_toolInputCommands, sizeof(InputCommands)); // initialise struct to zero
 
+	copiedObject = NULL;
+	leftClickTime = 0;
 	0xCAFEBABE;
 }
 
@@ -384,7 +386,63 @@ void ToolMain::onActionNewObject()
 
 void ToolMain::onActionDelObject()
 {
+	if (m_selectedObject != -1)
+	{
+		m_sceneGraph.erase(m_sceneGraph.begin() + m_selectedObject);
+		m_selectedObject = -1;
+		m_d3dRenderer.BuildDisplayList(&m_sceneGraph);
+		m_d3dRenderer.GetManipulator()->SetObject(NULL);
+	}
+}
 
+void ToolMain::onActionCopy()
+{
+	if (m_selectedObject != -1)
+	{
+		copiedObject = &m_sceneGraph[m_selectedObject];
+	}
+}
+
+void ToolMain::onActionPaste() // merge with new object? shares a lot of the same functionality
+{
+	if (copiedObject)
+	{
+		topID++;
+
+		SceneObject newSceneObject;
+		newSceneObject = *copiedObject;
+		newSceneObject.ID = topID;
+
+		bool positionCheckComplete = false;
+		bool clashFound = false;
+
+		while (!positionCheckComplete) // prevent overlapping objects
+		{
+			clashFound = false;
+
+			for (SceneObject object : m_sceneGraph)
+			{
+				if (newSceneObject.posX == object.posX && newSceneObject.posY == object.posY && newSceneObject.posZ == object.posZ)
+				{
+					newSceneObject.posX += 2;
+					clashFound = true;
+				}
+			}
+
+			if (!clashFound)
+			{
+				positionCheckComplete = true;
+			}
+		}
+
+		//send completed object to scenegraph
+		m_sceneGraph.push_back(newSceneObject);
+
+		m_d3dRenderer.BuildDisplayList(&m_sceneGraph);
+		m_selectedObject = m_d3dRenderer.GetDisplayList()->size() - 1;
+		m_d3dRenderer.GetManipulator()->SetObject(&m_d3dRenderer.GetDisplayList()->back());
+		m_d3dRenderer.FocusObject(m_selectedObject);
+	}
 }
 
 
@@ -402,7 +460,9 @@ void ToolMain::Tick(MSG *msg)
 	
 
 	//Renderer Update Call
+	
 	m_d3dRenderer.Tick(&m_toolInputCommands);
+	leftClickTime += m_d3dRenderer.GetDeltaTime();
 }
 
 void ToolMain::UpdateInput(MSG * msg)
@@ -444,6 +504,7 @@ void ToolMain::UpdateInput(MSG * msg)
 	case WM_LBUTTONDOWN:	//mouse button down,  you will probably need to check when its up too
 		//set some flag for the mouse button in inputcommands
 		m_toolInputCommands.LMBDown = true;
+		leftClickTime = 0;
 		break;
 
 	case WM_RBUTTONDOWN:
@@ -454,6 +515,13 @@ void ToolMain::UpdateInput(MSG * msg)
 
 	case WM_LBUTTONUP:
 		m_toolInputCommands.LMBDown = false;
+
+		// only do picking on short clicks. long clicks will do object manipulation.
+		if (leftClickTime < 0.2f)
+		{
+			m_selectedObject = m_d3dRenderer.MousePicking(m_selectedObject);
+		}
+		
 		break;
 
 	case WM_RBUTTONUP:
@@ -473,11 +541,6 @@ void ToolMain::UpdateInput(MSG * msg)
 		m_toolInputCommands.shift = false;
 	}
 
-	if (m_toolInputCommands.LMBDown)
-	{
-		m_selectedObject = m_d3dRenderer.MousePicking(m_selectedObject);
-		//m_toolInputCommands.LMBDown = false;
-	}
 
 	//here we update all the actual app functionality that we want.  This information will either be used int toolmain, or sent down to the renderer (Camera movement etc
 	//WASD movement

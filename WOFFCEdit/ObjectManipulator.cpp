@@ -43,7 +43,7 @@ void ObjectManipulator::Update(DX::StepTimer const& timer, InputCommands* input,
 		isManipulating = false;
 	}
 
-	if (isManipulating)
+	if (isManipulating && object)
 	{
 		float distanceX;
 		float distanceY;
