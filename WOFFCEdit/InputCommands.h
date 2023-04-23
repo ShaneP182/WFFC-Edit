@@ -15,6 +15,7 @@ struct InputCommands
 	bool LMBDown;
 	bool RMBDown;
 	bool shift;
+	bool ctrl;
 	int mouseX;
 	int mouseY;
 	int pickerX;

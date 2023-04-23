@@ -20,11 +20,14 @@ ToolMain::ToolMain()
 	m_toolInputCommands.left = false;
 	m_toolInputCommands.right = false;
 	m_toolInputCommands.shift = false;
+	m_toolInputCommands.ctrl = false;
 
 	ZeroMemory(&m_toolInputCommands, sizeof(InputCommands)); // initialise struct to zero
 
-	copiedObject = NULL;
-	leftClickTime = 0;
+	haveCopiedObject = false;
+	leftClickTimer = 0;
+	actionCooldown = 0.25;
+	actionCooldownTimer = 0;
 	0xCAFEBABE;
 }
 
@@ -399,18 +402,19 @@ void ToolMain::onActionCopy()
 {
 	if (m_selectedObject != -1)
 	{
-		copiedObject = &m_sceneGraph[m_selectedObject];
+		haveCopiedObject = true;
+		copiedObject = m_sceneGraph[m_selectedObject];
 	}
 }
 
 void ToolMain::onActionPaste() // merge with new object? shares a lot of the same functionality
 {
-	if (copiedObject)
+	if (haveCopiedObject)
 	{
 		topID++;
 
 		SceneObject newSceneObject;
-		newSceneObject = *copiedObject;
+		newSceneObject = copiedObject;
 		newSceneObject.ID = topID;
 
 		bool positionCheckComplete = false;
@@ -462,12 +466,33 @@ void ToolMain::Tick(MSG *msg)
 	//Renderer Update Call
 	
 	m_d3dRenderer.Tick(&m_toolInputCommands);
-	leftClickTime += m_d3dRenderer.GetDeltaTime();
+	leftClickTimer += m_d3dRenderer.GetDeltaTime();
+	actionCooldownTimer += m_d3dRenderer.GetDeltaTime();
 }
 
 void ToolMain::UpdateInput(MSG * msg)
 {
-	
+	bool isShiftDown = GetKeyState(VK_LSHIFT) < 0;
+
+	if (isShiftDown)
+	{
+		m_toolInputCommands.shift = true;
+	}
+	else
+	{
+		m_toolInputCommands.shift = false;
+	}
+
+	bool isCtrlDown = GetKeyState(VK_LCONTROL) < 0;
+
+	if (isCtrlDown)
+	{
+		m_toolInputCommands.ctrl = true;
+	}
+	else
+	{
+		m_toolInputCommands.ctrl = false;
+	}
 
 	switch (msg->message)
 	{
@@ -504,7 +529,7 @@ void ToolMain::UpdateInput(MSG * msg)
 	case WM_LBUTTONDOWN:	//mouse button down,  you will probably need to check when its up too
 		//set some flag for the mouse button in inputcommands
 		m_toolInputCommands.LMBDown = true;
-		leftClickTime = 0;
+		leftClickTimer = 0;
 		break;
 
 	case WM_RBUTTONDOWN:
@@ -517,7 +542,7 @@ void ToolMain::UpdateInput(MSG * msg)
 		m_toolInputCommands.LMBDown = false;
 
 		// only do picking on short clicks. long clicks will do object manipulation.
-		if (leftClickTime < 0.2f)
+		if (leftClickTimer < 0.2f)
 		{
 			m_selectedObject = m_d3dRenderer.MousePicking(m_selectedObject);
 		}
@@ -530,18 +555,7 @@ void ToolMain::UpdateInput(MSG * msg)
 		break;
 	}
 
-	bool isShiftDown = GetKeyState(VK_LSHIFT) < 0;
-
-	if (isShiftDown)
-	{
-		m_toolInputCommands.shift = true;
-	}
-	else
-	{
-		m_toolInputCommands.shift = false;
-	}
-
-
+	
 	//here we update all the actual app functionality that we want.  This information will either be used int toolmain, or sent down to the renderer (Camera movement etc
 	//WASD movement
 	if (m_keyArray['W'])
@@ -605,4 +619,86 @@ void ToolMain::UpdateInput(MSG * msg)
 	{
 		m_d3dRenderer.FocusObject(m_selectedObject);
 	}
+
+	if (m_keyArray['C'] && m_toolInputCommands.ctrl)
+	{
+		onActionCopy();
+	}
+
+	if (m_keyArray['V'] && m_toolInputCommands.ctrl)
+	{
+		if (actionCooldownTimer > actionCooldown)
+		{
+			actionCooldownTimer = 0;
+			onActionPaste();
+		}
+	}
+
+	if (m_keyArray['N'])
+	{
+		if (actionCooldownTimer > actionCooldown)
+		{
+			actionCooldownTimer = 0;
+			onActionNewObject();
+		}
+	}
+
+	if (m_keyArray['O'])
+	{
+		if (actionCooldownTimer > actionCooldown)
+		{
+			actionCooldownTimer = 0;
+			m_d3dRenderer.ToggleWireframeObjects();
+		}
+	}
+	
+	if (m_keyArray['L'])
+	{
+		if (actionCooldownTimer > actionCooldown)
+		{
+			actionCooldownTimer = 0;
+			m_d3dRenderer.ToggleWireframeTerrain();
+		}
+	}
+
+	if (m_keyArray['1'])
+	{
+		if (actionCooldownTimer > actionCooldown)
+		{
+			actionCooldownTimer = 0;
+			m_d3dRenderer.SetManipulationMode(ManipulationMode::TRANSLATE);
+		}
+	}
+
+	if (m_keyArray['2'])
+	{
+		if (actionCooldownTimer > actionCooldown)
+		{
+			actionCooldownTimer = 0;
+			m_d3dRenderer.SetManipulationMode(ManipulationMode::ROTATE);
+		}
+	}
+
+	if (m_keyArray['3'])
+	{
+		if (actionCooldownTimer > actionCooldown)
+		{
+			actionCooldownTimer = 0;
+			m_d3dRenderer.SetManipulationMode(ManipulationMode::SCALE);
+		}
+	}
+
+	if (m_keyArray[8]) // 8 = backspace
+	{
+		if (actionCooldownTimer > actionCooldown)
+		{
+			actionCooldownTimer = 0;
+			onActionDelObject();
+		}
+	}
+
+	// tab - switch between sculpting and selecting
+	// 1, 2, 3 is sculpt/select mode
+	// backspace or del to delete object
+
 }

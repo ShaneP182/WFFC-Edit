@@ -9,6 +9,7 @@ public:
 	virtual ~CustomCEdit();
 
 	bool updateFlag;
+
 protected:
 	DECLARE_MESSAGE_MAP();
 	afx_msg void OnChar(UINT nChar, UINT nRepCnt, UINT nFlags);

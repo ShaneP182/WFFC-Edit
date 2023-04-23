@@ -40,8 +40,11 @@ private:	//methods
 	void	onContentAdded();
 
 	int topID;
-	SceneObject* copiedObject;
-	float leftClickTime;
+	SceneObject copiedObject;
+	bool haveCopiedObject;
+	float leftClickTimer;
+	float actionCooldownTimer;
+	float actionCooldown;
 		
 private:	//variables
 	HWND	m_toolHandle;		//Handle to the  window
