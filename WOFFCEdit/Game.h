@@ -60,9 +60,15 @@ public:
 
 	void ToggleWireframeObjects() { wireframeObjects = !wireframeObjects; };
 	void ToggleWireframeTerrain() { wireframeTerrain = !wireframeTerrain; };
+	void SetHighlight(bool highlight) { m_highlight = highlight; };
+	bool GetHighlight() { return m_highlight; };
 	int MousePicking(int curID);
 	void FocusObject(int objID);
 	float GetDeltaTime() { return m_timer.GetElapsedSeconds(); };
+	void ScrollWheel(short delta);
+	Camera* GetCamera() { return &camera; };
+	float GetZoomSpeed() { return m_focusZoomSpeed; };
+	void SetZoomSpeed(float s) { m_focusZoomSpeed = s; };
 #ifdef DXTK_AUDIO
 	void NewAudioDevice();
 #endif
@@ -88,8 +94,14 @@ private:
 	ObjectManipulator					objectManipulator;
 	bool wireframeObjects;
 	bool wireframeTerrain;
+	bool m_highlight;
 	int* m_currentSelection;
 	RECT m_ScreenDimensions;
+
+	float m_focus;
+	float m_focusMin;
+	float m_focusMax;
+	float m_focusZoomSpeed;
 
 	//control variables
 	bool m_grid;							//grid rendering on / off

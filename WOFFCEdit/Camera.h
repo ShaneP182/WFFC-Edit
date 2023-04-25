@@ -18,6 +18,13 @@ public:
 
 	void SetPosition(DirectX::SimpleMath::Vector3 pos);
 
+	void SetLerpSpeed(float s) { lerpSpeed = s; };
+	float GetLerpSpeed() { return lerpSpeed; };
+	void SetMoveSpeed(float s) { m_camMoveSpeed = s; };
+	float GetMoveSpeed() { return m_camMoveSpeed; };
+	void SetRotSpeed(float s) { m_camRotRate = s; };
+	float GetRotSpeed() { return m_camRotRate; };
+
 private:
 	// Camera properties
 	DirectX::SimpleMath::Vector3		m_camPosition;

@@ -25,6 +25,11 @@ Game::Game()
 	m_grid = false;
     wireframeObjects = false;
     wireframeTerrain = false;
+    m_highlight = true;
+    m_focus = 2;
+    m_focusMin = 1;
+    m_focusMax = 10;
+    m_focusZoomSpeed = 30;
 }
 
 Game::~Game()
@@ -195,7 +200,7 @@ void Game::Render()
             if (m_currentSelection)
             {
 
-                if (i == *m_currentSelection)
+                if (i == *m_currentSelection && m_highlight)
                 {
                     m_displayList[i].m_model->UpdateEffects([&](IEffect* effect)
                         {
@@ -613,11 +618,32 @@ void Game::FocusObject(int objID) // moves camera to the object
         
        
         float dimensions[3] = { bounds.x, bounds.y, bounds.z };
-        float focusDistance = *std::max_element(dimensions, dimensions + 3) * m_displayList[objID].m_scale.x * 2; // get largest dimension, then orbit at twice that length.
+        float focusDistance = *std::max_element(dimensions, dimensions + 3) * abs(m_displayList[objID].m_scale.x) * m_focus; // get largest dimension, then orbit at twice that length.
 
        
         newCamPosition = objPosition + camera.GetForward() * -focusDistance; 
         camera.SetPosition(newCamPosition);
+    }
+}
+
+void Game::ScrollWheel(short delta)
+{
+    if (delta > 0)
+    {
+        m_focus -= m_timer.GetElapsedSeconds() * m_focusZoomSpeed;
+    }
+    else
+    {
+        m_focus += m_timer.GetElapsedSeconds() * m_focusZoomSpeed;
+    }
+
+    if (m_focus < m_focusMin)
+    {
+        m_focus = m_focusMin;
+    }
+    else if (m_focus > m_focusMax)
+    {
+        m_focus = m_focusMax;
     }
 }
 

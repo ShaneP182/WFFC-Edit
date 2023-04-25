@@ -42,7 +42,7 @@ void SelectDialogue::SetObjectData(std::vector<SceneObject>* SceneGraph, int * s
 	for (int i = 0; i < numSceneObjects; i++)
 	{
 		//easily possible to make the data string presented more complex. showing other columns.
-		std::wstring listBoxEntry = std::to_wstring(m_sceneGraph->at(i).ID);
+		std::wstring listBoxEntry = std::to_wstring(i);
 		m_listBox.AddString(listBoxEntry.c_str());
 	}
 }
@@ -66,7 +66,7 @@ void SelectDialogue::Select()
 	
 	m_listBox.GetText(index, currentSelectionValue);
 
-	*m_currentSelection = _ttoi(currentSelectionValue) - 1;
+	*m_currentSelection = _ttoi(currentSelectionValue);
 
 }
 

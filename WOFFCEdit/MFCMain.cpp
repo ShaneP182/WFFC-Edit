@@ -19,6 +19,7 @@ BEGIN_MESSAGE_MAP(MFCMain, CWinApp)
 	ON_COMMAND(ID_BUTTON_DEL_OBJECT, &MFCMain::ToolBarDelObject)
 	ON_COMMAND(ID_BUTTON_COPY, &MFCMain::ToolBarCopy)
 	ON_COMMAND(ID_BUTTON_PASTE, &MFCMain::ToolBarPaste)
+	ON_COMMAND(ID_BUTTON_SETTINGS, &MFCMain::ToolBarSettings)
 	ON_UPDATE_COMMAND_UI(ID_INDICATOR_TOOL, &CMyFrame::OnUpdatePage)
 END_MESSAGE_MAP()
 
@@ -58,6 +59,9 @@ BOOL MFCMain::InitInstance()
 	m_ToolObjectDialog.SetWindowPos(m_pMainWnd, 1024, 100, m_ToolObjectDialog.GetRect().Width(), m_ToolObjectDialog.GetRect().Height(), NULL); // position dialogue next to main window
 	m_ToolObjectDialog.ShowWindow(SW_SHOW);
 	m_ToolObjectDialog.SetObjectData(&m_ToolSystem.m_sceneGraph, &m_ToolSystem.m_selectedObject);
+
+	m_ToolSettingsDialog.Create(IDD_DIALOG_SETTINGS);
+	m_ToolSettingsDialog.SetGameRef(m_ToolSystem.GetGame());
 
 	return TRUE;
 }
@@ -199,6 +203,11 @@ void MFCMain::ToolBarCopy()
 void MFCMain::ToolBarPaste()
 {
 	m_ToolSystem.onActionPaste();
+}
+
+void MFCMain::ToolBarSettings()
+{
+	m_ToolSettingsDialog.ShowWindow(SW_SHOW);
 }
 
 

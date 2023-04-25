@@ -1,0 +1,101 @@
+#include "SettingsDialog.h"
+
+IMPLEMENT_DYNAMIC(SettingsDialog, CDialogEx)
+	
+BEGIN_MESSAGE_MAP(SettingsDialog, CDialogEx)
+	ON_COMMAND(IDOK, &SettingsDialog::End)
+	ON_COMMAND(IDC_BUTTON_APPLY, &SettingsDialog::Apply)
+END_MESSAGE_MAP()
+
+SettingsDialog::SettingsDialog(CWnd* pParent) : CDialogEx(IDD_DIALOG_SETTINGS, pParent)
+{
+	m_camMultiplier = 2;
+	m_objMultiplier = 10;
+}
+
+SettingsDialog::~SettingsDialog()
+{
+}
+
+void SettingsDialog::SetGameRef(Game* game)
+{
+	m_gameRef = game;
+
+	if (m_gameRef->GetHighlight())
+	{
+		CheckDlgButton(IDC_CHECK_HIGHLIGHT, BST_CHECKED);
+	}
+	else
+	{
+		CheckDlgButton(IDC_CHECK_HIGHLIGHT, BST_UNCHECKED);
+	}
+
+	
+	m_camMoveSpeed.SetPos(m_gameRef->GetCamera()->GetMoveSpeed());
+	m_camRotSpeed.SetPos(m_gameRef->GetCamera()->GetRotSpeed());
+	m_focusZoomSpeed.SetPos(m_gameRef->GetZoomSpeed());
+	m_focusLerpSpeed.SetPos(m_gameRef->GetCamera()->GetLerpSpeed());
+
+	m_objMoveSpeed.SetPos(m_gameRef->GetManipulator()->GetMoveSpeed() * m_objMultiplier);
+	m_objRotSpeed.SetPos(m_gameRef->GetManipulator()->GetRotSpeed() * m_objMultiplier);
+	m_objScaleSpeed.SetPos(m_gameRef->GetManipulator()->GetScaleSpeed() * m_objMultiplier);
+}
+
+void SettingsDialog::DoDataExchange(CDataExchange* pDX)
+{
+	CDialogEx::DoDataExchange(pDX);
+
+	DDX_Control(pDX, IDC_SLIDER_CAMSPEED, m_camMoveSpeed);
+	DDX_Control(pDX, IDC_SLIDER_CAMROT, m_camRotSpeed);
+	DDX_Control(pDX, IDC_SLIDER_FOCUSZOOM, m_focusZoomSpeed);
+	DDX_Control(pDX, IDC_SLIDER_FOCUSLERP, m_focusLerpSpeed);
+	DDX_Control(pDX, IDC_SLIDER_OBJSPEED, m_objMoveSpeed);
+	DDX_Control(pDX, IDC_SLIDER_OBJROT, m_objRotSpeed);
+	DDX_Control(pDX, IDC_SLIDER_OBJSCALE, m_objScaleSpeed);
+}
+
+void SettingsDialog::End()
+{
+	ShowWindow(SW_HIDE);
+}
+
+void SettingsDialog::Apply()
+{
+	if (IsDlgButtonChecked(IDC_CHECK_HIGHLIGHT) == BST_CHECKED)
+	{
+		m_gameRef->SetHighlight(true);
+	}
+	else
+	{
+		m_gameRef->SetHighlight(false);
+	}
+
+	m_gameRef->GetCamera()->SetMoveSpeed(m_camMoveSpeed.GetPos());
+	m_gameRef->GetCamera()->SetRotSpeed((float)m_camRotSpeed.GetPos() / m_camMultiplier);
+	m_gameRef->GetCamera()->SetLerpSpeed(m_focusLerpSpeed.GetPos());
+	m_gameRef->SetZoomSpeed(m_focusZoomSpeed.GetPos());
+
+	m_gameRef->GetManipulator()->SetMoveSpeed((float)m_objMoveSpeed.GetPos() / m_objMultiplier);
+	m_gameRef->GetManipulator()->SetRotSpeed((float)m_objRotSpeed.GetPos() / m_objMultiplier);
+	m_gameRef->GetManipulator()->SetScaleSpeed((float)m_objScaleSpeed.GetPos() / m_objMultiplier);
+	ShowWindow(SW_HIDE);
+}
+
+BOOL SettingsDialog::OnInitDialog()
+{
+	CDialogEx::OnInitDialog();
+
+	m_camMoveSpeed.SetRange(1, 50);
+	m_camRotSpeed.SetRange(1, 40);
+	m_focusZoomSpeed.SetRange(10, 50);
+	m_focusLerpSpeed.SetRange(1, 20);
+
+	m_objMoveSpeed.SetRange(1, 50);
+	m_objRotSpeed.SetRange(1, 200);
+	m_objScaleSpeed.SetRange(1, 20);
+	return 0;
+}
+
+void SettingsDialog::PostNcDestroy()
+{
+}

@@ -41,6 +41,13 @@ public:
 	bool RayIntersectsTriangle(DirectX::SimpleMath::Vector3 rayOrigin, DirectX::SimpleMath::Vector3 rayVector, Triangle* inTriangle, DirectX::SimpleMath::Vector3& outIntersectionPoint);
 	void CreateTriangles(DisplayChunk* terrain);
 
+	float GetMoveSpeed() { return movementRate; };
+	float GetRotSpeed() { return rotationRate; };
+	float GetScaleSpeed() { return scaleRate; };
+	void SetMoveSpeed(float s) { movementRate = s; };
+	void SetRotSpeed(float s) { rotationRate = s; };
+	void SetScaleSpeed(float s) { scaleRate = s; };
+
 	bool isManipulating;
 
 	

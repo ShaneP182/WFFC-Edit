@@ -10,6 +10,7 @@
 #include "MFCFrame.h"
 #include "SelectDialogue.h"
 #include "ObjectDialog.h"
+#include "SettingsDialog.h"
 
 
 class MFCMain : public CWinApp 
@@ -28,6 +29,7 @@ private:
 	CRect WindowRECT;	//Window area rectangle. 
 	SelectDialogue m_ToolSelectDialogue;			//for modeless dialogue, declare it here
 	ObjectDialog m_ToolObjectDialog;
+	SettingsDialog m_ToolSettingsDialog;
 
 	int m_width;		
 	int m_height;
@@ -48,6 +50,7 @@ private:
 	afx_msg void ToolBarDelObject();
 	afx_msg void ToolBarCopy();
 	afx_msg void ToolBarPaste();
+	afx_msg void ToolBarSettings();
 
 
 	DECLARE_MESSAGE_MAP()	// required macro for message map functionality  One per class

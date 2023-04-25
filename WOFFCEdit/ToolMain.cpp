@@ -553,6 +553,10 @@ void ToolMain::UpdateInput(MSG * msg)
 		ShowCursor(true);
 		m_toolInputCommands.RMBDown = false;
 		break;
+
+	case WM_MOUSEWHEEL:
+		auto wheelDelta = GET_WHEEL_DELTA_WPARAM(msg->wParam);
+		m_d3dRenderer.ScrollWheel(wheelDelta);
 	}
 
 	

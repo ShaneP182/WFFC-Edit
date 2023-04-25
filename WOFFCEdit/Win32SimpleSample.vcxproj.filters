@@ -63,6 +63,7 @@
     <ClCompile Include="ObjectManipulator.cpp" />
     <ClCompile Include="ObjectDialog.cpp" />
     <ClCompile Include="CustomCEdit.cpp" />
+    <ClCompile Include="SettingsDialog.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DeviceResources.h">
@@ -116,6 +117,7 @@
     <ClInclude Include="ObjectManipulator.h" />
     <ClInclude Include="ObjectDialog.h" />
     <ClInclude Include="CustomCEdit.h" />
+    <ClInclude Include="SettingsDialog.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
