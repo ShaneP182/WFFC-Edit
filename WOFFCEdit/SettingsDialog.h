@@ -21,9 +21,11 @@ protected:
 	Game* m_gameRef;
 	CSliderCtrl m_camMoveSpeed, m_camRotSpeed, m_focusZoomSpeed, m_focusLerpSpeed;
 	CSliderCtrl m_objMoveSpeed, m_objRotSpeed, m_objScaleSpeed;
+	CSliderCtrl m_sculptRadius, m_sculptMagnitude;
 	
 	float m_objMultiplier;
 	float m_camMultiplier;
+	float m_sculptMultiplier;
 
 	DECLARE_MESSAGE_MAP();
 

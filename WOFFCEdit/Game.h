@@ -14,6 +14,8 @@
 #include <vector>
 #include "Camera.h"
 #include "ObjectManipulator.h"
+#include "DirectXMath.h"
+#include "TerrainSculpter.h"
 
 // A basic game implementation that creates a D3D11 device and
 // provides a game loop.
@@ -57,6 +59,12 @@ public:
 	void SetSelection(int* sel) { m_currentSelection = sel; };
 	void SetManipulatorSceneGraph(std::vector<SceneObject>* sceneGraph, int* sel) { objectManipulator.SetSceneGraph(sceneGraph, sel); };
 	ObjectManipulator* GetManipulator() { return &objectManipulator; };
+	DirectX::SimpleMath::Vector3 LineTraceTerrain();
+	bool GetSculptModeActive() { return m_sculptModeActive; };
+	void SetSculptModeActive(bool active) { m_sculptModeActive = active; }
+	SculptMode GetSculptMode() { return m_terrainSculpter.GetMode(); }
+	void SetSculptMode(SculptMode mode) { m_terrainSculpter.SetMode(mode); };
+	TerrainSculpter* GetSculpter() { return &m_terrainSculpter; };
 
 	void ToggleWireframeObjects() { wireframeObjects = !wireframeObjects; };
 	void ToggleWireframeTerrain() { wireframeTerrain = !wireframeTerrain; };
@@ -69,6 +77,7 @@ public:
 	Camera* GetCamera() { return &camera; };
 	float GetZoomSpeed() { return m_focusZoomSpeed; };
 	void SetZoomSpeed(float s) { m_focusZoomSpeed = s; };
+	DisplayChunk* GetDisplayChunk() { return &m_displayChunk; };
 #ifdef DXTK_AUDIO
 	void NewAudioDevice();
 #endif
@@ -82,7 +91,7 @@ private:
 
 	void XM_CALLCONV DrawGrid(DirectX::FXMVECTOR xAxis, DirectX::FXMVECTOR yAxis, DirectX::FXMVECTOR origin, size_t xdivs, size_t ydivs, DirectX::GXMVECTOR color);
 
-	
+	bool m_sculptModeActive;
 
 	//tool specific
 	std::vector<DisplayObject>			m_displayList;
@@ -92,17 +101,20 @@ private:
 	//camera
 	Camera								camera;
 	ObjectManipulator					objectManipulator;
+	TerrainSculpter						m_terrainSculpter;
 	bool wireframeObjects;
 	bool wireframeTerrain;
 	bool m_highlight;
 	int* m_currentSelection;
 	RECT m_ScreenDimensions;
+	DirectX::SimpleMath::Vector3 m_spherePos;
 
 	float m_focus;
 	float m_focusMin;
 	float m_focusMax;
 	float m_focusZoomSpeed;
 
+	std::unique_ptr<DirectX::GeometricPrimitive> m_sphere;
 	//control variables
 	bool m_grid;							//grid rendering on / off
 	// Device resources.

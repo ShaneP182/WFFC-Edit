@@ -30,6 +30,9 @@ Game::Game()
     m_focusMin = 1;
     m_focusMax = 10;
     m_focusZoomSpeed = 30;
+    m_sculptModeActive = false;
+    m_spherePos = DirectX::SimpleMath::Vector3(0,0,0);
+    m_terrainSculpter.SetInput(&m_InputCommands);
 }
 
 Game::~Game()
@@ -62,6 +65,8 @@ void Game::Initialize(HWND window, int width, int height)
     CreateWindowSizeDependentResources();
 
     GetClientRect(window, &m_ScreenDimensions);
+
+    m_sphere = GeometricPrimitive::CreateSphere(m_deviceResources->GetD3DDeviceContext());
 
 #ifdef DXTK_AUDIO
     // Create DirectXTK for Audio objects
@@ -121,8 +126,20 @@ void Game::Update(DX::StepTimer const& timer)
 {
     //update camera with inputs
     camera.Update(timer, &m_InputCommands);
-    objectManipulator.Update(timer, &m_InputCommands, &camera);
-    m_displayChunk.UpdateTerrain();
+
+    if (m_sculptModeActive)
+    {
+        if (m_InputCommands.LMBDown)
+        {
+            m_terrainSculpter.Sculpt(&m_displayChunk, m_spherePos, timer);
+        }
+    }
+    else
+    {
+        objectManipulator.Update(timer, &m_InputCommands, &camera);
+    }
+
+    //m_displayChunk.UpdateTerrain();
     objectManipulator.SnapToGround(&m_displayChunk);
 
 	//apply camera vectors
@@ -264,10 +281,29 @@ void Game::Render()
         context->RSSetState(m_states->Wireframe());		//uncomment for wireframe
     }
 	
+    
 
 	//Render the batch,  This is handled in the Display chunk becuase it has the potential to get complex
 	m_displayChunk.RenderBatch(m_deviceResources);
    
+    if (m_sculptModeActive)
+    {
+        float rad = m_terrainSculpter.GetRadius() * 2; 
+        const XMVECTORF32 scale = { rad, rad, rad };
+        m_spherePos = LineTraceTerrain();
+
+        const XMVECTORF32 translate = { m_spherePos.x, m_spherePos.y, m_spherePos.z };
+
+        //convert degrees into radians for rotation matrix
+        XMVECTOR rotate = Quaternion::CreateFromYawPitchRoll(0, 0, 0);
+
+        XMMATRIX local = m_world * XMMatrixTransformation(g_XMZero, Quaternion::Identity, scale, g_XMZero, rotate, translate);
+        DirectX::XMVECTOR colour = DirectX::XMVectorSet(1, 0, 1, 0.25);
+        if (m_terrainSculpter.m_canSculpt)
+        {
+            m_sphere->Draw(local, m_view, m_projection, colour);
+        }
+    }
 
     //CAMERA POSITION ON HUD
     m_sprites->Begin();
@@ -492,6 +528,41 @@ void Game::SetManipulationMode(ManipulationMode mode)
 ManipulationMode Game::GetManipulationMode()
 {
     return objectManipulator.GetMode();
+}
+
+DirectX::SimpleMath::Vector3 Game::LineTraceTerrain()
+{
+    objectManipulator.CreateTriangles(&m_displayChunk); // change to only do this when updating terrain
+    std::vector<Triangle> triangles = objectManipulator.GetTriangles();
+
+    const XMVECTOR nearSource = XMVectorSet(m_InputCommands.pickerX, m_InputCommands.pickerY, 0.0f, 1.0f);
+    const XMVECTOR farSource = XMVectorSet(m_InputCommands.pickerX, m_InputCommands.pickerY, 1.0f, 1.0f);
+
+    GetClientRect(GetActiveWindow(), &m_ScreenDimensions);
+
+    //Unproject the points on the near and far plane, with respect to the matrix we just created.
+    XMVECTOR nearPoint = XMVector3Unproject(nearSource, 0.0f, 0.0f, m_ScreenDimensions.right, m_ScreenDimensions.bottom, m_deviceResources->GetScreenViewport().MinDepth, m_deviceResources->GetScreenViewport().MaxDepth, m_projection, m_view, m_world);
+    XMVECTOR farPoint = XMVector3Unproject(farSource, 0.0f, 0.0f, m_ScreenDimensions.right, m_ScreenDimensions.bottom, m_deviceResources->GetScreenViewport().MinDepth, m_deviceResources->GetScreenViewport().MaxDepth, m_projection, m_view, m_world);
+
+    //turn the transformed points into our picking vector. 
+    XMVECTOR pickingVector = farPoint - nearPoint;
+    pickingVector = XMVector3Normalize(pickingVector);
+
+    DirectX::SimpleMath::Vector3 rayOrigin = DirectX::SimpleMath::Vector3(nearPoint);
+    DirectX::SimpleMath::Vector3 rayVector = DirectX::SimpleMath::Vector3(pickingVector);
+    DirectX::SimpleMath::Vector3 intersectionPoint;
+
+    for (Triangle triangle : triangles)
+    {
+        if (ObjectManipulator::RayIntersectsTriangle(rayOrigin, rayVector, &triangle, intersectionPoint))
+        {
+            m_terrainSculpter.m_canSculpt = true;
+            return intersectionPoint;
+        }
+    }
+
+    m_terrainSculpter.m_canSculpt = false;
+    return DirectX::SimpleMath::Vector3(0, 0, 0);
 }
 
 int Game::MousePicking(int curID)

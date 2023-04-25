@@ -282,6 +282,8 @@ void ToolMain::onActionSave()
 		sqlite3_step(pResults);	
 	}
 	MessageBox(NULL, L"Objects Saved", L"Notification", MB_OK);
+
+	m_d3dRenderer.GetDisplayChunk()->SaveHeightMap();
 }
 
 void ToolMain::onActionSaveTerrain()
@@ -515,7 +517,7 @@ void ToolMain::UpdateInput(MSG * msg)
 		break;
 
 	case WM_MOUSEMOVE:
-		// Used for rotation since moving mouse with SetCursorPos uses different co-ordinate space from l paramsuwuowo
+		// Used for rotation since moving mouse with SetCursorPos uses different co-ordinate space from l params
 		POINT point;
 		GetCursorPos(&point);
 		m_toolInputCommands.mouseX = point.x;
@@ -544,7 +546,10 @@ void ToolMain::UpdateInput(MSG * msg)
 		// only do picking on short clicks. long clicks will do object manipulation.
 		if (leftClickTimer < 0.2f)
 		{
-			m_selectedObject = m_d3dRenderer.MousePicking(m_selectedObject);
+			if (!m_d3dRenderer.GetSculptModeActive())
+			{
+				m_selectedObject = m_d3dRenderer.MousePicking(m_selectedObject);
+			}
 		}
 		
 		break;
@@ -557,6 +562,8 @@ void ToolMain::UpdateInput(MSG * msg)
 	case WM_MOUSEWHEEL:
 		auto wheelDelta = GET_WHEEL_DELTA_WPARAM(msg->wParam);
 		m_d3dRenderer.ScrollWheel(wheelDelta);
+		break;
+
 	}
 
 	
@@ -570,7 +577,15 @@ void ToolMain::UpdateInput(MSG * msg)
 	
 	if (m_keyArray['S'])
 	{
-		m_toolInputCommands.back = true;
+		if (m_toolInputCommands.ctrl)
+		{
+			onActionSave();
+			m_keyArray['S'] = false;
+		}
+		else
+		{
+			m_toolInputCommands.back = true;
+		}
 	}
 	else m_toolInputCommands.back = false;
 	if (m_keyArray['A'])
@@ -670,7 +685,15 @@ void ToolMain::UpdateInput(MSG * msg)
 		if (actionCooldownTimer > actionCooldown)
 		{
 			actionCooldownTimer = 0;
-			m_d3dRenderer.SetManipulationMode(ManipulationMode::TRANSLATE);
+			if (m_d3dRenderer.GetSculptModeActive())
+			{
+				m_d3dRenderer.SetSculptMode(SculptMode::RAISE);
+			}
+			else
+			{
+				m_d3dRenderer.SetManipulationMode(ManipulationMode::TRANSLATE);
+			}
+			
 		}
 	}
 
@@ -679,7 +702,14 @@ void ToolMain::UpdateInput(MSG * msg)
 		if (actionCooldownTimer > actionCooldown)
 		{
 			actionCooldownTimer = 0;
-			m_d3dRenderer.SetManipulationMode(ManipulationMode::ROTATE);
+			if (m_d3dRenderer.GetSculptModeActive())
+			{
+				m_d3dRenderer.SetSculptMode(SculptMode::LOWER);
+			}
+			else
+			{
+				m_d3dRenderer.SetManipulationMode(ManipulationMode::ROTATE);
+			}
 		}
 	}
 
@@ -688,7 +718,14 @@ void ToolMain::UpdateInput(MSG * msg)
 		if (actionCooldownTimer > actionCooldown)
 		{
 			actionCooldownTimer = 0;
-			m_d3dRenderer.SetManipulationMode(ManipulationMode::SCALE);
+			if (m_d3dRenderer.GetSculptModeActive())
+			{
+				m_d3dRenderer.SetSculptMode(SculptMode::FLATTEN);
+			}
+			else
+			{
+				m_d3dRenderer.SetManipulationMode(ManipulationMode::SCALE);
+			}
 		}
 	}
 
@@ -696,9 +733,23 @@ void ToolMain::UpdateInput(MSG * msg)
 	{
 		if (actionCooldownTimer > actionCooldown)
 		{
-			actionCooldownTimer = 0;
-			onActionDelObject();
+			if (MessageBox(NULL, L"Do you wish to delete this object? This action cannot be undone.", L"Notification", MB_YESNO) == IDYES)
+			{
+				actionCooldownTimer = 0;
+				onActionDelObject();
+				m_keyArray[8] = false;
+			}
 		}
+	}
+
+	if (m_keyArray[9]) // 9 = tab
+	{
+		if (actionCooldownTimer > actionCooldown)
+		{
+			actionCooldownTimer = 0;
+			m_d3dRenderer.SetSculptModeActive(!m_d3dRenderer.GetSculptModeActive()); // toggle sculpt mode
+		}
+
 	}
 
 	// tab - switch between sculpting and selecting

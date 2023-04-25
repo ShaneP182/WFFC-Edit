@@ -141,6 +141,7 @@ void ObjectDialog::Update()
 }
 
 
+
 void ObjectDialog::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);

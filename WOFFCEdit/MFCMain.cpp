@@ -20,6 +20,12 @@ BEGIN_MESSAGE_MAP(MFCMain, CWinApp)
 	ON_COMMAND(ID_BUTTON_COPY, &MFCMain::ToolBarCopy)
 	ON_COMMAND(ID_BUTTON_PASTE, &MFCMain::ToolBarPaste)
 	ON_COMMAND(ID_BUTTON_SETTINGS, &MFCMain::ToolBarSettings)
+	ON_COMMAND(ID_BUTTON_SELECT, &MFCMain::ToolBarObjectMode)
+	ON_COMMAND(ID_BUTTON_SCULPT, &MFCMain::ToolBarSculptMode)
+	ON_COMMAND(ID_BUTTON_RAISE, &MFCMain::ToolBarSculptRaise)
+	ON_COMMAND(ID_BUTTON_CARVE, &MFCMain::ToolBarSculptLower)
+	ON_COMMAND(ID_BUTTON_FLATTEN, &MFCMain::ToolBarSculptFlatten)
+	ON_COMMAND(ID_BUTTON_RESET, &MFCMain::ToolBarReset)
 	ON_UPDATE_COMMAND_UI(ID_INDICATOR_TOOL, &CMyFrame::OnUpdatePage)
 END_MESSAGE_MAP()
 
@@ -97,18 +103,39 @@ int MFCMain::Run()
 			std::wstring statusString;
 			//statusString = L"Selected Object: " + std::to_wstring(ID); // not needed anymore, object highlighting and object dialog box indicate this
 			
-			switch (m_ToolSystem.GetGame()->GetManipulationMode())
+			if (m_ToolSystem.GetGame()->GetSculptModeActive())
 			{
-			case ManipulationMode::TRANSLATE:
-				statusString += L"Control Mode: TRANSLATE";
-				break;
-			case ManipulationMode::ROTATE:
-				statusString += L"Control Mode: ROTATE";
-				break;
-			case ManipulationMode::SCALE:
-				statusString += L"Control Mode: SCALE";
-				break;
+				statusString = L"Sculpt Mode: ";
+				switch (m_ToolSystem.GetGame()->GetSculptMode())
+				{
+				case SculptMode::RAISE:
+					statusString += L"RAISE";
+					break;
+				case SculptMode::LOWER:
+					statusString += L"LOWER";
+					break;
+				case SculptMode::FLATTEN:
+					statusString += L"FLATTEN";
+					break;
+				}
 			}
+			else
+			{
+				statusString = L"Control Mode: ";
+				switch (m_ToolSystem.GetGame()->GetManipulationMode())
+				{
+				case ManipulationMode::TRANSLATE:
+					statusString += L"TRANSLATE";
+					break;
+				case ManipulationMode::ROTATE:
+					statusString += L"ROTATE";
+					break;
+				case ManipulationMode::SCALE:
+					statusString += L"SCALE";
+					break;
+				}
+			}
+			
 			
 			m_ToolSystem.Tick(&msg);
 			m_ToolObjectDialog.Update();
@@ -192,7 +219,10 @@ void MFCMain::ToolBarNewObject()
 
 void MFCMain::ToolBarDelObject()
 {
-	m_ToolSystem.onActionDelObject();
+	if (MessageBox(NULL, L"Do you wish to delete this object? This action cannot be undone.", L"Notification", MB_YESNO) == IDYES)
+	{
+		m_ToolSystem.onActionDelObject();
+	}
 }
 
 void MFCMain::ToolBarCopy()
@@ -208,6 +238,37 @@ void MFCMain::ToolBarPaste()
 void MFCMain::ToolBarSettings()
 {
 	m_ToolSettingsDialog.ShowWindow(SW_SHOW);
+}
+
+void MFCMain::ToolBarObjectMode()
+{
+	m_ToolSystem.GetGame()->SetSculptModeActive(false);
+}
+
+void MFCMain::ToolBarSculptMode()
+{
+	m_ToolSystem.GetGame()->SetSculptModeActive(true);
+}
+
+void MFCMain::ToolBarSculptRaise()
+{
+	m_ToolSystem.GetGame()->SetSculptMode(SculptMode::RAISE);
+}
+
+void MFCMain::ToolBarSculptLower()
+{
+	m_ToolSystem.GetGame()->SetSculptMode(SculptMode::LOWER);
+}
+
+void MFCMain::ToolBarSculptFlatten()
+{
+	m_ToolSystem.GetGame()->SetSculptMode(SculptMode::FLATTEN);
+}
+
+void MFCMain::ToolBarReset()
+{
+	//m_ToolSystem.GetGame()->BuildDisplayChunk(&m_ToolSystem.m_chunk);
+	m_ToolSystem.onActionLoad();
 }
 
 

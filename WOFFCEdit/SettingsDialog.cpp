@@ -11,6 +11,7 @@ SettingsDialog::SettingsDialog(CWnd* pParent) : CDialogEx(IDD_DIALOG_SETTINGS, p
 {
 	m_camMultiplier = 2;
 	m_objMultiplier = 10;
+	m_sculptMultiplier = 10;
 }
 
 SettingsDialog::~SettingsDialog()
@@ -30,6 +31,14 @@ void SettingsDialog::SetGameRef(Game* game)
 		CheckDlgButton(IDC_CHECK_HIGHLIGHT, BST_UNCHECKED);
 	}
 
+	if (m_gameRef->GetSculpter()->m_editHeightMap)
+	{
+		CheckDlgButton(IDC_CHECK_HEIGHTMAP, BST_CHECKED);
+	}
+	else
+	{
+		CheckDlgButton(IDC_CHECK_HEIGHTMAP, BST_UNCHECKED);
+	}
 	
 	m_camMoveSpeed.SetPos(m_gameRef->GetCamera()->GetMoveSpeed());
 	m_camRotSpeed.SetPos(m_gameRef->GetCamera()->GetRotSpeed());
@@ -39,6 +48,9 @@ void SettingsDialog::SetGameRef(Game* game)
 	m_objMoveSpeed.SetPos(m_gameRef->GetManipulator()->GetMoveSpeed() * m_objMultiplier);
 	m_objRotSpeed.SetPos(m_gameRef->GetManipulator()->GetRotSpeed() * m_objMultiplier);
 	m_objScaleSpeed.SetPos(m_gameRef->GetManipulator()->GetScaleSpeed() * m_objMultiplier);
+
+	m_sculptRadius.SetPos(m_gameRef->GetSculpter()->GetRadius() * m_sculptMultiplier);
+	m_sculptMagnitude.SetPos(m_gameRef->GetSculpter()->GetMagnitude() * m_sculptMultiplier);
 }
 
 void SettingsDialog::DoDataExchange(CDataExchange* pDX)
@@ -52,6 +64,8 @@ void SettingsDialog::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_SLIDER_OBJSPEED, m_objMoveSpeed);
 	DDX_Control(pDX, IDC_SLIDER_OBJROT, m_objRotSpeed);
 	DDX_Control(pDX, IDC_SLIDER_OBJSCALE, m_objScaleSpeed);
+	DDX_Control(pDX, IDC_SLIDER_RADIUS, m_sculptRadius);
+	DDX_Control(pDX, IDC_SLIDER_MAGNITUDE, m_sculptMagnitude);
 }
 
 void SettingsDialog::End()
@@ -70,6 +84,15 @@ void SettingsDialog::Apply()
 		m_gameRef->SetHighlight(false);
 	}
 
+	if (IsDlgButtonChecked(IDC_CHECK_HEIGHTMAP) == BST_CHECKED)
+	{
+		m_gameRef->GetSculpter()->m_editHeightMap = true;
+	}
+	else
+	{
+		m_gameRef->GetSculpter()->m_editHeightMap = false;
+	}
+
 	m_gameRef->GetCamera()->SetMoveSpeed(m_camMoveSpeed.GetPos());
 	m_gameRef->GetCamera()->SetRotSpeed((float)m_camRotSpeed.GetPos() / m_camMultiplier);
 	m_gameRef->GetCamera()->SetLerpSpeed(m_focusLerpSpeed.GetPos());
@@ -78,6 +101,9 @@ void SettingsDialog::Apply()
 	m_gameRef->GetManipulator()->SetMoveSpeed((float)m_objMoveSpeed.GetPos() / m_objMultiplier);
 	m_gameRef->GetManipulator()->SetRotSpeed((float)m_objRotSpeed.GetPos() / m_objMultiplier);
 	m_gameRef->GetManipulator()->SetScaleSpeed((float)m_objScaleSpeed.GetPos() / m_objMultiplier);
+
+	m_gameRef->GetSculpter()->SetRadius((float)m_sculptRadius.GetPos() / m_sculptMultiplier);
+	m_gameRef->GetSculpter()->SetMagnitude((float)m_sculptMagnitude.GetPos() / m_sculptMultiplier);
 	ShowWindow(SW_HIDE);
 }
 
@@ -93,6 +119,9 @@ BOOL SettingsDialog::OnInitDialog()
 	m_objMoveSpeed.SetRange(1, 50);
 	m_objRotSpeed.SetRange(1, 200);
 	m_objScaleSpeed.SetRange(1, 20);
+
+	m_sculptRadius.SetRange(20, 200);
+	m_sculptMagnitude.SetRange(20, 200);
 	return 0;
 }
 

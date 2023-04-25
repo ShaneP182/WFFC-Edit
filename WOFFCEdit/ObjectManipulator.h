@@ -38,8 +38,9 @@ public:
 	void SetObjectRotation(float x, float y, float z);
 	void SetObjectScale(float x, float y, float z);
 	void SnapToGround(DisplayChunk* terrain);
-	bool RayIntersectsTriangle(DirectX::SimpleMath::Vector3 rayOrigin, DirectX::SimpleMath::Vector3 rayVector, Triangle* inTriangle, DirectX::SimpleMath::Vector3& outIntersectionPoint);
+	static bool RayIntersectsTriangle(DirectX::SimpleMath::Vector3 rayOrigin, DirectX::SimpleMath::Vector3 rayVector, Triangle* inTriangle, DirectX::SimpleMath::Vector3& outIntersectionPoint);
 	void CreateTriangles(DisplayChunk* terrain);
+	std::vector<Triangle> GetTriangles() { return triangles; };
 
 	float GetMoveSpeed() { return movementRate; };
 	float GetRotSpeed() { return rotationRate; };

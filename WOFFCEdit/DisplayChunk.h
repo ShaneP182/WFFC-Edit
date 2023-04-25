@@ -17,7 +17,8 @@ public:
 	void LoadHeightMap(std::shared_ptr<DX::DeviceResources>  DevResources);
 	void SaveHeightMap();			//saves the heigtmap back to file.
 	void UpdateTerrain();			//updates the geometry based on the heigtmap
-	void GenerateHeightmap();		//creates or alters the heightmap
+	void GenerateHeightmap(int index, float magnitude);		//creates or alters the heightmap
+	void FlattenHeightmap(int index);
 	DirectX::VertexPositionNormalTexture** GetTerrain();
 	std::unique_ptr<DirectX::PrimitiveBatch<DirectX::VertexPositionNormalTexture>>  m_batch;
 	std::unique_ptr<DirectX::BasicEffect>       m_terrainEffect;
@@ -27,7 +28,7 @@ public:
 	DirectX::VertexPositionNormalTexture m_terrainGeometry[TERRAINRESOLUTION][TERRAINRESOLUTION];
 
 private:
-	
+	float sculptScale;
 	
 	BYTE m_heightMap[TERRAINRESOLUTION*TERRAINRESOLUTION];
 	void CalculateTerrainNormals();

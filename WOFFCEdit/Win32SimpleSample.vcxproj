@@ -183,6 +183,7 @@
     <ClCompile Include="SelectDialogue.cpp" />
     <ClCompile Include="SettingsDialog.cpp" />
     <ClCompile Include="sqlite3.c" />
+    <ClCompile Include="TerrainSculpter.cpp" />
     <ClCompile Include="ToolMain.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -207,6 +208,7 @@
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="StepTimer.h" />
     <ClInclude Include="MFCMain.h" />
+    <ClInclude Include="TerrainSculpter.h" />
     <ClInclude Include="ToolMain.h" />
   </ItemGroup>
   <ItemGroup>

@@ -64,6 +64,7 @@
     <ClCompile Include="ObjectDialog.cpp" />
     <ClCompile Include="CustomCEdit.cpp" />
     <ClCompile Include="SettingsDialog.cpp" />
+    <ClCompile Include="TerrainSculpter.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DeviceResources.h">
@@ -118,6 +119,7 @@
     <ClInclude Include="ObjectDialog.h" />
     <ClInclude Include="CustomCEdit.h" />
     <ClInclude Include="SettingsDialog.h" />
+    <ClInclude Include="TerrainSculpter.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
