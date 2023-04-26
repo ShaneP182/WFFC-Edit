@@ -17,7 +17,6 @@ public: //methods
 	//onAction - These are the interface to MFC
 	int		getCurrentSelectionID();										//returns the selection number of currently selected object so that It can be displayed.
 	void	onActionInitialise(HWND handle, int width, int height);			//Passes through handle and hieght and width and initialises DirectX renderer and SQL LITE
-	void	onActionFocusCamera();
 	void	onActionLoad();													//load the current chunk
 	afx_msg	void	onActionSave();											//save the current chunk
 	afx_msg void	onActionSaveTerrain();									//save chunk geometry
@@ -39,12 +38,7 @@ public:	//variables
 private:	//methods
 	void	onContentAdded();
 
-	int topID;
-	SceneObject copiedObject;
-	bool haveCopiedObject;
-	float leftClickTimer;
-	float actionCooldownTimer;
-	float actionCooldown;
+	
 		
 private:	//variables
 	HWND	m_toolHandle;		//Handle to the  window
@@ -58,5 +52,9 @@ private:	//variables
 	int m_height;
 	int m_currentChunk;			//the current chunk of thedatabase that we are operating on.  Dictates loading and saving. 
 	
-	
+	SceneObject copiedObject;
+	bool haveCopiedObject;
+	float leftClickTimer;
+	float actionCooldownTimer;
+	float actionCooldown;
 };

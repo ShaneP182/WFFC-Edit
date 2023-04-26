@@ -10,6 +10,7 @@ ObjectManipulator::ObjectManipulator()
 	movementRate = 1.0f;
 	rotationRate = 5.0f;
 	scaleRate = 0.2f;
+	clickTimer = 0.0f;
 }
 
 ObjectManipulator::~ObjectManipulator()
@@ -29,7 +30,13 @@ void ObjectManipulator::Update(DX::StepTimer const& timer, InputCommands* input,
 					isManipulating = true;
 					clickX = input->mouseX;
 					clickY = input->mouseY;
+					clickTimer = 0.0f;
+					initialObject = m_sceneGraph->at(*m_currentSelection);
 				}
+			}
+			else
+			{
+				clickTimer += timer.GetElapsedSeconds();
 			}
 		}
 		else

@@ -31,6 +31,7 @@ Game::Game()
     m_focusMax = 10;
     m_focusZoomSpeed = 30;
     m_sculptModeActive = false;
+    m_ManipulatorUndoFlag = false;
     m_spherePos = DirectX::SimpleMath::Vector3(0,0,0);
     m_terrainSculpter.SetInput(&m_InputCommands);
 }
@@ -139,7 +140,18 @@ void Game::Update(DX::StepTimer const& timer)
         objectManipulator.Update(timer, &m_InputCommands, &camera);
     }
 
-    //m_displayChunk.UpdateTerrain();
+
+    if (objectManipulator.GetActive() && objectManipulator.GetClickLength() > 0.2f && !m_ManipulatorUndoFlag)
+    {
+        m_ManipulatorUndoFlag = true;
+        AddAction(Action::MODIFY);
+        AddToModifyStack(objectManipulator.GetInitialObject());
+    }
+    else if (!objectManipulator.GetActive())
+    {
+        m_ManipulatorUndoFlag = false;
+    }
+
     objectManipulator.SnapToGround(&m_displayChunk);
 
 	//apply camera vectors
@@ -422,6 +434,8 @@ void Game::BuildDisplayList(std::vector<SceneObject> * SceneGraph)
 {
 	auto device = m_deviceResources->GetD3DDevice();
 	auto devicecontext = m_deviceResources->GetD3DDeviceContext();
+    m_sceneGraph = SceneGraph;
+    m_topID = m_sceneGraph->back().ID;
 
 	if (!m_displayList.empty())		//is the vector empty
 	{
@@ -718,7 +732,277 @@ void Game::ScrollWheel(short delta)
     }
 }
 
+void Game::AddToModifyStack(SceneObject object)
+{
+    UndoModifyStack.push(object);
+}
+
+void Game::AddToAddStack(SceneObject object)
+{
+    UndoAddStack.push(object);
+}
+
+void Game::AddToRemoveStack(SceneObject object)
+{
+    UndoRemoveStack.push(object);
+}
+
+void Game::ClearUndoRedo()
+{
+    while (!UndoStack.empty())
+        UndoStack.pop();
+    
+    while (!RedoStack.empty())
+        RedoStack.pop();
+    
+    while (!UndoModifyStack.empty())
+        UndoModifyStack.pop();
+
+    while (!RedoModifyStack.empty())
+        RedoModifyStack.pop();
+
+    while (!UndoAddStack.empty())
+        UndoAddStack.pop();
+   
+    while (!UndoRemoveStack.empty())
+        UndoRemoveStack.pop();
+
+    while (!RedoRemoveStack.empty())
+        RedoRemoveStack.pop();
+
+}
+
+void Game::Undo()
+{
+    if (!UndoStack.empty())
+    {
+        Action action = UndoStack.top();
+        SceneObject oldObject;
+        SceneObject* currentObject;
+        int index;
+        
+
+        // add to redo stack
+        RedoStack.push(action);
+        
+        UndoStack.pop();
+       
+
+        switch (action)
+        {
+        case Action::ADD:
+            oldObject = UndoAddStack.top();
+            currentObject = GetObjectByID(oldObject.ID, index);
+            UndoAddStack.pop();
+            DeleteSceneObject(index);
+            m_topID--;
+            //MessageBox(NULL, L"Add object undone.", L"Notification", MB_OK);
+            break;
+        case Action::MODIFY:
+            oldObject = UndoModifyStack.top();
+            currentObject = GetObjectByID(oldObject.ID, index);
+            RedoModifyStack.push(*currentObject);
+            UndoModifyStack.pop();
+            ApplyChanges(currentObject, oldObject);
+            //MessageBox(NULL, L"Modify object undone.", L"Notification", MB_OK);
+            break;
+        case Action::REMOVE:
+            // can't re-use old ID in case new object has been made that uses it
+            oldObject = UndoRemoveStack.top();
+            UndoRemoveStack.pop();
+            AddSceneObject();
+            currentObject = &m_sceneGraph->back();
+            ApplyChanges(currentObject, oldObject);
+            currentObject->ID = m_topID;
+            RedoRemoveStack.push(*currentObject);
+            //MessageBox(NULL, L"Remove object undone.", L"Notification", MB_OK);
+            break;
+        }
+        BuildDisplayList(m_sceneGraph);
+    }
+}
+
+void Game::Redo()
+{
+    if (!RedoStack.empty())
+    {
+        Action action = RedoStack.top();
+        SceneObject oldObject;
+        SceneObject* currentObject;
+        int index;
+
+        // add back to undo stack
+        UndoStack.push(action);
+        RedoStack.pop();
+        
+
+        switch (action)
+        {
+        case Action::ADD:
+            AddSceneObject();
+            //MessageBox(NULL, L"Add object redone.", L"Notification", MB_OK);
+            break;
+        case Action::MODIFY:
+            oldObject = RedoModifyStack.top();
+            currentObject = GetObjectByID(oldObject.ID, index);
+            UndoModifyStack.push(*currentObject);
+            RedoModifyStack.pop();
+            ApplyChanges(currentObject, oldObject);
+            //MessageBox(NULL, L"Modify object redone.", L"Notification", MB_OK);
+            break;
+        case Action::REMOVE:
+            oldObject = RedoRemoveStack.top();
+            currentObject = GetObjectByID(oldObject.ID, index);
+            RedoRemoveStack.pop();
+            UndoRemoveStack.push(*currentObject);
+            DeleteSceneObject(index);
+            //MessageBox(NULL, L"Remove object redone.", L"Notification", MB_OK);
+            break;
+        }
+        BuildDisplayList(m_sceneGraph);
+    }
+}
+
+SceneObject* Game::GetObjectByID(int ID, int& returnIndex)
+{
+    for (int i = 0; i < m_sceneGraph->size(); i++)
+    {
+        if (m_sceneGraph->at(i).ID == ID)
+        {
+            returnIndex = i;
+            return &m_sceneGraph->at(i);
+        }
+    }
+
+    return nullptr;
+}
+
+void Game::ApplyChanges(SceneObject* newObject, SceneObject oldObject)
+{
+    newObject->posX = oldObject.posX;
+    newObject->posY = oldObject.posY;
+    newObject->posZ = oldObject.posZ;
+    newObject->rotX = oldObject.rotX;
+    newObject->rotY = oldObject.rotY;
+    newObject->rotZ = oldObject.rotZ;
+    newObject->scaX = oldObject.scaX;
+    newObject->scaY = oldObject.scaY;
+    newObject->scaZ = oldObject.scaZ;
+    newObject->editor_render = oldObject.editor_render;
+    newObject->snapToGround = oldObject.snapToGround;
+    newObject->model_path = oldObject.model_path;
+    newObject->tex_diffuse_path = oldObject.tex_diffuse_path;
+}
+
+void Game::DeleteSceneObject(int index)
+{
+    m_sceneGraph->erase(m_sceneGraph->begin() + index);
+    *m_currentSelection = -1;
+    BuildDisplayList(m_sceneGraph);
+    GetManipulator()->SetObject(NULL);
+}
+
+void Game::AddSceneObject()
+{
+    m_topID++;
+
+
+    SceneObject newSceneObject;
+    newSceneObject.ID = m_topID;
+    newSceneObject.chunk_ID = 0;
+    newSceneObject.model_path = "database/data/placeholder.cmo";
+    newSceneObject.tex_diffuse_path = "database/data/placeholder.dds";
+    newSceneObject.posX = 0;
+    newSceneObject.posY = 5;
+    newSceneObject.posZ = 0;
+    newSceneObject.rotX = 0;
+    newSceneObject.rotY = 0;
+    newSceneObject.rotZ = 0;
+    newSceneObject.scaX = 1;
+    newSceneObject.scaY = 1;
+    newSceneObject.scaZ = 1;
+    newSceneObject.render = true;
+    newSceneObject.collision = 0;
+    newSceneObject.collision_mesh = "";
+    newSceneObject.collectable = 0;
+    newSceneObject.destructable = 0;
+    newSceneObject.health_amount = 0;
+    newSceneObject.editor_render = 1;
+    newSceneObject.editor_texture_vis = 1;
+    newSceneObject.editor_normals_vis = 0;
+    newSceneObject.editor_collision_vis = 0;
+    newSceneObject.editor_pivot_vis = 0;
+    newSceneObject.pivotX = 0;
+    newSceneObject.pivotY = 0;
+    newSceneObject.pivotZ = 0;
+    newSceneObject.snapToGround = 0;
+    newSceneObject.AINode = 0;
+    newSceneObject.audio_path = "";
+    newSceneObject.volume = 0;
+    newSceneObject.pitch = 0;
+    newSceneObject.pan = 0;
+    newSceneObject.one_shot = 0;
+    newSceneObject.play_on_init = 0;
+    newSceneObject.play_in_editor = 0;
+    newSceneObject.min_dist = 0;
+    newSceneObject.max_dist = 0;
+    newSceneObject.camera = 0;
+    newSceneObject.path_node = 0;
+    newSceneObject.path_node_start = 0;
+    newSceneObject.path_node_end = 0;
+    newSceneObject.parent_id = 0;
+    newSceneObject.editor_wireframe = 0;
+    newSceneObject.name = "Name";
+
+    /*
+    newSceneObject.light_type = sqlite3_column_int(pResults, 45);
+    newSceneObject.light_diffuse_r = sqlite3_column_double(pResults, 46);
+    newSceneObject.light_diffuse_g = sqlite3_column_double(pResults, 47);
+    newSceneObject.light_diffuse_b = sqlite3_column_double(pResults, 48);
+    newSceneObject.light_specular_r = sqlite3_column_double(pResults, 49);
+    newSceneObject.light_specular_g = sqlite3_column_double(pResults, 50);
+    newSceneObject.light_specular_b = sqlite3_column_double(pResults, 51);
+    newSceneObject.light_spot_cutoff = sqlite3_column_double(pResults, 52);
+    newSceneObject.light_constant = sqlite3_column_double(pResults, 53);
+    newSceneObject.light_linear = sqlite3_column_double(pResults, 54);
+    newSceneObject.light_quadratic = sqlite3_column_double(pResults, 55);
+    */
+
+    bool positionCheckComplete = false;
+    bool clashFound = false;
+
+    while (!positionCheckComplete) // prevent overlapping objects
+    {
+        clashFound = false;
+
+        for (SceneObject object : *m_sceneGraph)
+        {
+            if (newSceneObject.posX == object.posX && newSceneObject.posY == object.posY && newSceneObject.posZ == object.posZ)
+            {
+                newSceneObject.posX += 2;
+                clashFound = true;
+            }
+        }
+
+        if (!clashFound)
+        {
+            positionCheckComplete = true;
+        }
+    }
+
+
+    AddToAddStack(newSceneObject);
+    //send completed object to scenegraph
+    m_sceneGraph->push_back(newSceneObject);
+
+    BuildDisplayList(m_sceneGraph);
+    *m_currentSelection = GetDisplayList()->size() - 1;
+    GetManipulator()->SetObject(&GetDisplayList()->back());
+   
+}
+
 #ifdef DXTK_AUDIO
+
 void Game::NewAudioDevice()
 {
     if (m_audEngine && !m_audEngine->IsAudioDevicePresent())

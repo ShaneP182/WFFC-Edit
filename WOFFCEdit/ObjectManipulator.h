@@ -48,14 +48,17 @@ public:
 	void SetMoveSpeed(float s) { movementRate = s; };
 	void SetRotSpeed(float s) { rotationRate = s; };
 	void SetScaleSpeed(float s) { scaleRate = s; };
+	SceneObject GetInitialObject() { return initialObject; };
 
 	bool isManipulating;
-
+	float GetClickLength() { return clickTimer; };
 	
 	//void SetObjects(std::vector<DisplayObject> objs) { objects = &objs; };
 private:
 	ManipulationMode manipulationMode;
 	DisplayObject* object;
+
+	SceneObject initialObject;
 	//std::vector<DisplayObject*> objects;
 	std::vector<Triangle> triangles;
 
@@ -68,5 +71,6 @@ private:
 	float movementRate;
 	float rotationRate;
 	float scaleRate;
+	float clickTimer;
 };
 

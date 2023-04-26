@@ -57,6 +57,8 @@ private:
 	afx_msg void ToolBarSculptLower();
 	afx_msg void ToolBarSculptFlatten();
 	afx_msg void ToolBarReset();
+	afx_msg void ToolBarUndo();
+	afx_msg void ToolBarRedo();
 
 	DECLARE_MESSAGE_MAP()	// required macro for message map functionality  One per class
 };

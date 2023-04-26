@@ -173,6 +173,9 @@ void ObjectDialog::CheckboxVisibility()
 {
 	if (*m_currentSelection != -1)
 	{
+		m_gameRef->AddAction(Action::MODIFY);
+		m_gameRef->AddToModifyStack(m_sceneGraph->at(*m_currentSelection));
+
 		if (IsDlgButtonChecked(IDC_CHECK_VISIBILITY) == BST_CHECKED)
 		{
 			m_sceneGraph->at(*m_currentSelection).editor_render = true;
@@ -187,6 +190,7 @@ void ObjectDialog::CheckboxVisibility()
 		if (m_gameRef)
 		{
 			m_gameRef->BuildDisplayList(m_sceneGraph);
+			
 		}
 	}
 }
@@ -195,6 +199,9 @@ void ObjectDialog::CheckboxSnapToGround()
 {
 	if (*m_currentSelection != -1)
 	{
+		m_gameRef->AddAction(Action::MODIFY);
+		m_gameRef->AddToModifyStack(m_sceneGraph->at(*m_currentSelection));
+
 		if (IsDlgButtonChecked(IDC_CHECK_SNAP) == BST_CHECKED)
 		{
 			m_sceneGraph->at(*m_currentSelection).snapToGround = true;
@@ -207,72 +214,77 @@ void ObjectDialog::CheckboxSnapToGround()
 		if (m_gameRef)
 		{
 			m_gameRef->BuildDisplayList(m_sceneGraph);
+			
 		}
 	}
 }
 
 void ObjectDialog::UpdateObject()
 {
-	SceneObject* Object = &m_sceneGraph->at(*m_currentSelection);
-
-	std::wstring IDString = std::to_wstring(Object->ID);
-	m_ObjectIDText.SetWindowTextW(IDString.c_str());
-
-
-
-	std::wstring PosX, PosY, PosZ;
-	PosX = std::to_wstring(Object->posX);
-	PosY = std::to_wstring(Object->posY);
-	PosZ = std::to_wstring(Object->posZ);
-
-	m_PosX.SetWindowTextW(PosX.c_str());
-	m_PosY.SetWindowTextW(PosY.c_str());
-	m_PosZ.SetWindowTextW(PosZ.c_str());
-
-	std::wstring RotX, RotY, RotZ;
-	RotX = std::to_wstring(Object->rotX);
-	RotY = std::to_wstring(Object->rotY);
-	RotZ = std::to_wstring(Object->rotZ);
-
-	m_RotX.SetWindowTextW(RotX.c_str());
-	m_RotY.SetWindowTextW(RotY.c_str());
-	m_RotZ.SetWindowTextW(RotZ.c_str());
-
-	std::wstring ScaleX, ScaleY, ScaleZ;
-	ScaleX = std::to_wstring(Object->scaX);
-	ScaleY = std::to_wstring(Object->scaY);
-	ScaleZ = std::to_wstring(Object->scaZ);
-
-	m_ScaleX.SetWindowTextW(ScaleX.c_str());
-	m_ScaleY.SetWindowTextW(ScaleY.c_str());
-	m_ScaleZ.SetWindowTextW(ScaleZ.c_str());
-
-	if (Object->editor_render)
+	if (*m_currentSelection != -1)
 	{
-		CheckDlgButton(IDC_CHECK_VISIBILITY, BST_CHECKED);
-	}
-	else
-	{
-		CheckDlgButton(IDC_CHECK_VISIBILITY, BST_UNCHECKED);
+		SceneObject* Object = &m_sceneGraph->at(*m_currentSelection);
+
+		std::wstring IDString = std::to_wstring(Object->ID);
+		m_ObjectIDText.SetWindowTextW(IDString.c_str());
+
+
+
+		std::wstring PosX, PosY, PosZ;
+		PosX = std::to_wstring(Object->posX);
+		PosY = std::to_wstring(Object->posY);
+		PosZ = std::to_wstring(Object->posZ);
+
+		m_PosX.SetWindowTextW(PosX.c_str());
+		m_PosY.SetWindowTextW(PosY.c_str());
+		m_PosZ.SetWindowTextW(PosZ.c_str());
+
+		std::wstring RotX, RotY, RotZ;
+		RotX = std::to_wstring(Object->rotX);
+		RotY = std::to_wstring(Object->rotY);
+		RotZ = std::to_wstring(Object->rotZ);
+
+		m_RotX.SetWindowTextW(RotX.c_str());
+		m_RotY.SetWindowTextW(RotY.c_str());
+		m_RotZ.SetWindowTextW(RotZ.c_str());
+
+		std::wstring ScaleX, ScaleY, ScaleZ;
+		ScaleX = std::to_wstring(Object->scaX);
+		ScaleY = std::to_wstring(Object->scaY);
+		ScaleZ = std::to_wstring(Object->scaZ);
+
+		m_ScaleX.SetWindowTextW(ScaleX.c_str());
+		m_ScaleY.SetWindowTextW(ScaleY.c_str());
+		m_ScaleZ.SetWindowTextW(ScaleZ.c_str());
+
+		if (Object->editor_render)
+		{
+			CheckDlgButton(IDC_CHECK_VISIBILITY, BST_CHECKED);
+		}
+		else
+		{
+			CheckDlgButton(IDC_CHECK_VISIBILITY, BST_UNCHECKED);
+		}
+
+		if (Object->snapToGround)
+		{
+			CheckDlgButton(IDC_CHECK_SNAP, BST_CHECKED);
+		}
+		else
+		{
+			CheckDlgButton(IDC_CHECK_SNAP, BST_UNCHECKED);
+		}
+
+		std::wstring modelPath = std::wstring(Object->model_path.begin(), Object->model_path.end());
+		std::wstring texturePath = std::wstring(Object->tex_diffuse_path.begin(), Object->tex_diffuse_path.end());
+
+		int modelIndex = m_ModelPath.FindString(0, modelPath.c_str());
+		int textureIndex = m_TexturePath.FindString(0, texturePath.c_str());
+
+		m_ModelPath.SetCurSel(modelIndex);
+		m_TexturePath.SetCurSel(textureIndex);
 	}
 	
-	if (Object->snapToGround)
-	{
-		CheckDlgButton(IDC_CHECK_SNAP, BST_CHECKED);
-	}
-	else
-	{
-		CheckDlgButton(IDC_CHECK_SNAP, BST_UNCHECKED);
-	}
-
-	std::wstring modelPath = std::wstring(Object->model_path.begin(), Object->model_path.end());
-	std::wstring texturePath = std::wstring(Object->tex_diffuse_path.begin(), Object->tex_diffuse_path.end());
-
-	int modelIndex = m_ModelPath.FindString(0, modelPath.c_str());
-	int textureIndex = m_TexturePath.FindString(0, texturePath.c_str());
-
-	m_ModelPath.SetCurSel(modelIndex);
-	m_TexturePath.SetCurSel(textureIndex);
 	
 	//m_gameRef->BuildDisplayList(m_sceneGraph); // dont build display list, change the object position
 
@@ -285,6 +297,8 @@ void ObjectDialog::UpdateObjectFromEditBoxes()
 	// then update object through object manipulator
 	if (*m_currentSelection != -1)
 	{
+		m_gameRef->AddAction(Action::MODIFY);
+		m_gameRef->AddToModifyStack(m_sceneGraph->at(*m_currentSelection));
 
 		//NEED TO MAKE OWN CEDITS TO HANDLE INPUT VALIDATION. CURRENTLY DOES NOT ACCEPT NEGATIVES OR DECIMAL
 		SceneObject* Object = &m_sceneGraph->at(*m_currentSelection);

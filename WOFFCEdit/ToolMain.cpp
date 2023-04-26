@@ -51,6 +51,7 @@ void ToolMain::onActionInitialise(HWND handle, int width, int height)
 	m_height	= height;
 	
 	m_d3dRenderer.Initialize(handle, m_width, m_height);
+	
 
 	//database connection establish
 	int rc;
@@ -67,7 +68,6 @@ void ToolMain::onActionInitialise(HWND handle, int width, int height)
 	}
 
 	onActionLoad();
-	topID = m_sceneGraph.back().ID;
 }
 
 void ToolMain::onActionLoad()
@@ -193,6 +193,7 @@ void ToolMain::onActionLoad()
 	m_d3dRenderer.BuildDisplayChunk(&m_chunk);
 
 	m_d3dRenderer.SetManipulatorSceneGraph(&m_sceneGraph, &m_selectedObject);
+	//m_d3dRenderer.SetSceneGraph(&m_sceneGraph);
 }
 
 void ToolMain::onActionSave()
@@ -293,99 +294,8 @@ void ToolMain::onActionSaveTerrain()
 
 void ToolMain::onActionNewObject()
 {
-	topID++;
-
-	SceneObject newSceneObject;
-	newSceneObject.ID = topID;
-	newSceneObject.chunk_ID = 0;
-	newSceneObject.model_path = "database/data/placeholder.cmo";
-	newSceneObject.tex_diffuse_path = "database/data/placeholder.dds";
-	newSceneObject.posX = 0;
-	newSceneObject.posY = 5;
-	newSceneObject.posZ = 0;
-	newSceneObject.rotX = 0;
-	newSceneObject.rotY = 0;
-	newSceneObject.rotZ = 0;
-	newSceneObject.scaX = 1;
-	newSceneObject.scaY = 1;
-	newSceneObject.scaZ = 1;
-	newSceneObject.render = true;
-	newSceneObject.collision = 0;
-	newSceneObject.collision_mesh = "";
-	newSceneObject.collectable = 0;
-	newSceneObject.destructable = 0;
-	newSceneObject.health_amount = 0;
-	newSceneObject.editor_render = 1;
-	newSceneObject.editor_texture_vis = 1;
-	newSceneObject.editor_normals_vis = 0;
-	newSceneObject.editor_collision_vis = 0;
-	newSceneObject.editor_pivot_vis = 0;
-	newSceneObject.pivotX = 0;
-	newSceneObject.pivotY = 0;
-	newSceneObject.pivotZ = 0;
-	newSceneObject.snapToGround = 0;
-	newSceneObject.AINode = 0;
-	newSceneObject.audio_path = "";
-	newSceneObject.volume = 0;
-	newSceneObject.pitch = 0;
-	newSceneObject.pan = 0;
-	newSceneObject.one_shot = 0;
-	newSceneObject.play_on_init = 0;
-	newSceneObject.play_in_editor = 0;
-	newSceneObject.min_dist = 0;
-	newSceneObject.max_dist = 0;
-	newSceneObject.camera = 0;
-	newSceneObject.path_node = 0;
-	newSceneObject.path_node_start = 0;
-	newSceneObject.path_node_end = 0;
-	newSceneObject.parent_id = 0;
-	newSceneObject.editor_wireframe = 0;
-	newSceneObject.name = "Name";
-
-	/*
-	newSceneObject.light_type = sqlite3_column_int(pResults, 45);
-	newSceneObject.light_diffuse_r = sqlite3_column_double(pResults, 46);
-	newSceneObject.light_diffuse_g = sqlite3_column_double(pResults, 47);
-	newSceneObject.light_diffuse_b = sqlite3_column_double(pResults, 48);
-	newSceneObject.light_specular_r = sqlite3_column_double(pResults, 49);
-	newSceneObject.light_specular_g = sqlite3_column_double(pResults, 50);
-	newSceneObject.light_specular_b = sqlite3_column_double(pResults, 51);
-	newSceneObject.light_spot_cutoff = sqlite3_column_double(pResults, 52);
-	newSceneObject.light_constant = sqlite3_column_double(pResults, 53);
-	newSceneObject.light_linear = sqlite3_column_double(pResults, 54);
-	newSceneObject.light_quadratic = sqlite3_column_double(pResults, 55);
-	*/
-
-	bool positionCheckComplete = false;
-	bool clashFound = false;
-
-	while (!positionCheckComplete) // prevent overlapping objects
-	{
-		clashFound = false;
-
-		for (SceneObject object : m_sceneGraph)
-		{
-			if (newSceneObject.posX == object.posX && newSceneObject.posY == object.posY && newSceneObject.posZ == object.posZ)
-			{
-				newSceneObject.posX += 2;
-				clashFound = true;
-			}
-		}
-
-		if (!clashFound)
-		{
-			positionCheckComplete = true;
-		}
-	}
-	
-
-
-	//send completed object to scenegraph
-	m_sceneGraph.push_back(newSceneObject);
-
-	m_d3dRenderer.BuildDisplayList(&m_sceneGraph);
-	m_selectedObject = m_d3dRenderer.GetDisplayList()->size() - 1;
-	m_d3dRenderer.GetManipulator()->SetObject(&m_d3dRenderer.GetDisplayList()->back());
+	m_d3dRenderer.AddAction(Action::ADD);
+	m_d3dRenderer.AddSceneObject();
 	m_d3dRenderer.FocusObject(m_selectedObject);
 }
 
@@ -393,10 +303,10 @@ void ToolMain::onActionDelObject()
 {
 	if (m_selectedObject != -1)
 	{
-		m_sceneGraph.erase(m_sceneGraph.begin() + m_selectedObject);
-		m_selectedObject = -1;
-		m_d3dRenderer.BuildDisplayList(&m_sceneGraph);
-		m_d3dRenderer.GetManipulator()->SetObject(NULL);
+		m_d3dRenderer.AddAction(Action::REMOVE);
+		m_d3dRenderer.AddToRemoveStack(m_sceneGraph.at(m_selectedObject));
+
+		m_d3dRenderer.DeleteSceneObject(m_selectedObject);
 	}
 }
 
@@ -413,11 +323,11 @@ void ToolMain::onActionPaste() // merge with new object? shares a lot of the sam
 {
 	if (haveCopiedObject)
 	{
-		topID++;
+		m_d3dRenderer.m_topID++;
 
 		SceneObject newSceneObject;
 		newSceneObject = copiedObject;
-		newSceneObject.ID = topID;
+		newSceneObject.ID = m_d3dRenderer.m_topID++;;
 
 		bool positionCheckComplete = false;
 		bool clashFound = false;
@@ -653,6 +563,25 @@ void ToolMain::UpdateInput(MSG * msg)
 		}
 	}
 
+
+	if (m_keyArray['Z'] && m_toolInputCommands.ctrl)
+	{
+		if (actionCooldownTimer > actionCooldown)
+		{
+			actionCooldownTimer = 0;
+			GetGame()->Undo();
+		}
+	}
+
+	if (m_keyArray['Y'] && m_toolInputCommands.ctrl)
+	{
+		if (actionCooldownTimer > actionCooldown)
+		{
+			actionCooldownTimer = 0;
+			GetGame()->Redo();
+		}
+	}
+
 	if (m_keyArray['N'])
 	{
 		if (actionCooldownTimer > actionCooldown)
@@ -733,7 +662,7 @@ void ToolMain::UpdateInput(MSG * msg)
 	{
 		if (actionCooldownTimer > actionCooldown)
 		{
-			if (MessageBox(NULL, L"Do you wish to delete this object? This action cannot be undone.", L"Notification", MB_YESNO) == IDYES)
+			if (MessageBox(NULL, L"Do you wish to delete this object?", L"Notification", MB_YESNO) == IDYES)
 			{
 				actionCooldownTimer = 0;
 				onActionDelObject();
@@ -751,6 +680,7 @@ void ToolMain::UpdateInput(MSG * msg)
 		}
 
 	}
+
 
 	// tab - switch between sculpting and selecting
 	// 1, 2, 3 is sculpt/select mode

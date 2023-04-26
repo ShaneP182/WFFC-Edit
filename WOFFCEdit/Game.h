@@ -16,9 +16,18 @@
 #include "ObjectManipulator.h"
 #include "DirectXMath.h"
 #include "TerrainSculpter.h"
+#include <stack>
 
 // A basic game implementation that creates a D3D11 device and
 // provides a game loop.
+
+enum class Action
+{
+	MODIFY,
+	ADD,
+	REMOVE
+};
+
 class Game : public DX::IDeviceNotify
 {
 public:
@@ -58,6 +67,7 @@ public:
 	ManipulationMode GetManipulationMode();
 	void SetSelection(int* sel) { m_currentSelection = sel; };
 	void SetManipulatorSceneGraph(std::vector<SceneObject>* sceneGraph, int* sel) { objectManipulator.SetSceneGraph(sceneGraph, sel); };
+	//void SetSceneGraph(std::vector<SceneObject>* sceneGraph) { m_sceneGraph = sceneGraph; };
 	ObjectManipulator* GetManipulator() { return &objectManipulator; };
 	DirectX::SimpleMath::Vector3 LineTraceTerrain();
 	bool GetSculptModeActive() { return m_sculptModeActive; };
@@ -78,11 +88,35 @@ public:
 	float GetZoomSpeed() { return m_focusZoomSpeed; };
 	void SetZoomSpeed(float s) { m_focusZoomSpeed = s; };
 	DisplayChunk* GetDisplayChunk() { return &m_displayChunk; };
+	void AddAction(Action action) { UndoStack.push(action); };
+	void AddToModifyStack(SceneObject object);
+	void AddToAddStack(SceneObject object);
+	void AddToRemoveStack(SceneObject object);
+	void ClearUndoRedo();
+
+	std::stack<Action> GetUndoStack() { return UndoStack; };
+	std::stack<Action> GetRedoStack() { return RedoStack; };
+	void Undo();
+	void Redo();
+	SceneObject* GetObjectByID(int ID, int& returnIndex);
+	void ApplyChanges(SceneObject* newObject, SceneObject oldObject);
+	void DeleteSceneObject(int index);
+	void AddSceneObject();
+
+	int m_topID;
 #ifdef DXTK_AUDIO
 	void NewAudioDevice();
 #endif
 
 private:
+
+	std::stack<Action> UndoStack;  // clear stacks on save/load?
+	std::stack<Action> RedoStack;
+	std::stack<SceneObject> UndoModifyStack;
+	std::stack<SceneObject> RedoModifyStack;
+	std::stack<SceneObject> UndoAddStack;
+	std::stack<SceneObject> UndoRemoveStack;
+	std::stack<SceneObject> RedoRemoveStack;
 
 	void Update(DX::StepTimer const& timer);
 
@@ -92,6 +126,9 @@ private:
 	void XM_CALLCONV DrawGrid(DirectX::FXMVECTOR xAxis, DirectX::FXMVECTOR yAxis, DirectX::FXMVECTOR origin, size_t xdivs, size_t ydivs, DirectX::GXMVECTOR color);
 
 	bool m_sculptModeActive;
+
+	std::vector<SceneObject>* m_sceneGraph;
+	bool m_ManipulatorUndoFlag;
 
 	//tool specific
 	std::vector<DisplayObject>			m_displayList;
@@ -109,6 +146,7 @@ private:
 	RECT m_ScreenDimensions;
 	DirectX::SimpleMath::Vector3 m_spherePos;
 
+	
 	float m_focus;
 	float m_focusMin;
 	float m_focusMax;

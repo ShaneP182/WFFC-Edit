@@ -26,6 +26,8 @@ BEGIN_MESSAGE_MAP(MFCMain, CWinApp)
 	ON_COMMAND(ID_BUTTON_CARVE, &MFCMain::ToolBarSculptLower)
 	ON_COMMAND(ID_BUTTON_FLATTEN, &MFCMain::ToolBarSculptFlatten)
 	ON_COMMAND(ID_BUTTON_RESET, &MFCMain::ToolBarReset)
+	ON_COMMAND(ID_BUTTON_UNDO, &MFCMain::ToolBarUndo)
+	ON_COMMAND(ID_BUTTON_REDO, &MFCMain::ToolBarRedo)
 	ON_UPDATE_COMMAND_UI(ID_INDICATOR_TOOL, &CMyFrame::OnUpdatePage)
 END_MESSAGE_MAP()
 
@@ -102,9 +104,33 @@ int MFCMain::Run()
 			int ID = m_ToolSystem.getCurrentSelectionID();
 			std::wstring statusString;
 			//statusString = L"Selected Object: " + std::to_wstring(ID); // not needed anymore, object highlighting and object dialog box indicate this
+			CToolBar* tb = &m_frame->m_toolBar;
+
+			if (m_ToolSystem.GetGame()->GetUndoStack().empty())
+			{
+				tb->SetButtonStyle(tb->CommandToIndex(ID_BUTTON_UNDO), TBBS_DISABLED);
+			}
+			else
+			{
+				tb->SetButtonStyle(tb->CommandToIndex(ID_BUTTON_UNDO), TBBS_BUTTON);
+			}
 			
+			if (m_ToolSystem.GetGame()->GetRedoStack().empty())
+			{
+				tb->SetButtonStyle(tb->CommandToIndex(ID_BUTTON_REDO), TBBS_DISABLED);
+			}
+			else
+			{
+				tb->SetButtonStyle(tb->CommandToIndex(ID_BUTTON_REDO), TBBS_BUTTON);
+			}
+
 			if (m_ToolSystem.GetGame()->GetSculptModeActive())
 			{
+				
+				tb->SetButtonStyle(tb->CommandToIndex(ID_BUTTON_SCULPT), TBBS_PRESSED);
+				tb->SetButtonStyle(tb->CommandToIndex(ID_BUTTON_SELECT), TBBS_BUTTON);
+
+				//m_frame->m_toolBar.GetButton
 				statusString = L"Sculpt Mode: ";
 				switch (m_ToolSystem.GetGame()->GetSculptMode())
 				{
@@ -121,6 +147,9 @@ int MFCMain::Run()
 			}
 			else
 			{
+				tb->SetButtonStyle(tb->CommandToIndex(ID_BUTTON_SCULPT), TBBS_BUTTON);
+				tb->SetButtonStyle(tb->CommandToIndex(ID_BUTTON_SELECT), TBBS_PRESSED);
+
 				statusString = L"Control Mode: ";
 				switch (m_ToolSystem.GetGame()->GetManipulationMode())
 				{
@@ -219,7 +248,7 @@ void MFCMain::ToolBarNewObject()
 
 void MFCMain::ToolBarDelObject()
 {
-	if (MessageBox(NULL, L"Do you wish to delete this object? This action cannot be undone.", L"Notification", MB_YESNO) == IDYES)
+	if (MessageBox(NULL, L"Do you wish to delete this object?", L"Notification", MB_YESNO) == IDYES)
 	{
 		m_ToolSystem.onActionDelObject();
 	}
@@ -269,6 +298,19 @@ void MFCMain::ToolBarReset()
 {
 	//m_ToolSystem.GetGame()->BuildDisplayChunk(&m_ToolSystem.m_chunk);
 	m_ToolSystem.onActionLoad();
+	m_ToolSystem.GetGame()->ClearUndoRedo();
+}
+
+void MFCMain::ToolBarUndo()
+{
+	m_ToolSystem.GetGame()->Undo();
+	m_ToolObjectDialog.UpdateObject();
+}
+
+void MFCMain::ToolBarRedo()
+{
+	m_ToolSystem.GetGame()->Redo();
+	m_ToolObjectDialog.UpdateObject();
 }
 
 
