@@ -174,7 +174,7 @@ void ObjectDialog::CheckboxVisibility()
 	if (*m_currentSelection != -1)
 	{
 		m_gameRef->AddAction(Action::MODIFY);
-		m_gameRef->AddToModifyStack(m_sceneGraph->at(*m_currentSelection));
+		m_gameRef->AddToObjectStack(m_sceneGraph->at(*m_currentSelection));
 
 		if (IsDlgButtonChecked(IDC_CHECK_VISIBILITY) == BST_CHECKED)
 		{
@@ -200,7 +200,7 @@ void ObjectDialog::CheckboxSnapToGround()
 	if (*m_currentSelection != -1)
 	{
 		m_gameRef->AddAction(Action::MODIFY);
-		m_gameRef->AddToModifyStack(m_sceneGraph->at(*m_currentSelection));
+		m_gameRef->AddToObjectStack(m_sceneGraph->at(*m_currentSelection));
 
 		if (IsDlgButtonChecked(IDC_CHECK_SNAP) == BST_CHECKED)
 		{
@@ -298,7 +298,7 @@ void ObjectDialog::UpdateObjectFromEditBoxes()
 	if (*m_currentSelection != -1)
 	{
 		m_gameRef->AddAction(Action::MODIFY);
-		m_gameRef->AddToModifyStack(m_sceneGraph->at(*m_currentSelection));
+		m_gameRef->AddToObjectStack(m_sceneGraph->at(*m_currentSelection));
 
 		//NEED TO MAKE OWN CEDITS TO HANDLE INPUT VALIDATION. CURRENTLY DOES NOT ACCEPT NEGATIVES OR DECIMAL
 		SceneObject* Object = &m_sceneGraph->at(*m_currentSelection);

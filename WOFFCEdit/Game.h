@@ -89,10 +89,9 @@ public:
 	void SetZoomSpeed(float s) { m_focusZoomSpeed = s; };
 	DisplayChunk* GetDisplayChunk() { return &m_displayChunk; };
 	void AddAction(Action action) { UndoStack.push(action); };
-	void AddToModifyStack(SceneObject object);
-	void AddToAddStack(SceneObject object);
-	void AddToRemoveStack(SceneObject object);
+	void AddToObjectStack(SceneObject object);
 	void ClearUndoRedo();
+	void ClearRedo();
 
 	std::stack<Action> GetUndoStack() { return UndoStack; };
 	std::stack<Action> GetRedoStack() { return RedoStack; };
@@ -112,11 +111,8 @@ private:
 
 	std::stack<Action> UndoStack;  // clear stacks on save/load?
 	std::stack<Action> RedoStack;
-	std::stack<SceneObject> UndoModifyStack;
-	std::stack<SceneObject> RedoModifyStack;
-	std::stack<SceneObject> UndoAddStack;
-	std::stack<SceneObject> UndoRemoveStack;
-	std::stack<SceneObject> RedoRemoveStack;
+	std::stack<SceneObject> UndoObjectStack;
+	std::stack<SceneObject> RedoObjectStack;
 
 	void Update(DX::StepTimer const& timer);
 

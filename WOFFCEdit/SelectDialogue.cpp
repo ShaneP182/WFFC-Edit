@@ -47,6 +47,11 @@ void SelectDialogue::SetObjectData(std::vector<SceneObject>* SceneGraph, int * s
 	}
 }
 
+void SelectDialogue::ClearList()
+{
+	m_listBox.ResetContent();
+}
+
 
 void SelectDialogue::DoDataExchange(CDataExchange* pDX)
 {

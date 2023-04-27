@@ -145,7 +145,7 @@ void Game::Update(DX::StepTimer const& timer)
     {
         m_ManipulatorUndoFlag = true;
         AddAction(Action::MODIFY);
-        AddToModifyStack(objectManipulator.GetInitialObject());
+        AddToObjectStack(objectManipulator.GetInitialObject());
     }
     else if (!objectManipulator.GetActive())
     {
@@ -732,19 +732,10 @@ void Game::ScrollWheel(short delta)
     }
 }
 
-void Game::AddToModifyStack(SceneObject object)
+void Game::AddToObjectStack(SceneObject object)
 {
-    UndoModifyStack.push(object);
-}
-
-void Game::AddToAddStack(SceneObject object)
-{
-    UndoAddStack.push(object);
-}
-
-void Game::AddToRemoveStack(SceneObject object)
-{
-    UndoRemoveStack.push(object);
+    ClearRedo();
+    UndoObjectStack.push(object);
 }
 
 void Game::ClearUndoRedo()
@@ -755,21 +746,21 @@ void Game::ClearUndoRedo()
     while (!RedoStack.empty())
         RedoStack.pop();
     
-    while (!UndoModifyStack.empty())
-        UndoModifyStack.pop();
+    while (!UndoObjectStack.empty())
+        UndoObjectStack.pop();
 
-    while (!RedoModifyStack.empty())
-        RedoModifyStack.pop();
+    while (!RedoObjectStack.empty())
+        RedoObjectStack.pop();
 
-    while (!UndoAddStack.empty())
-        UndoAddStack.pop();
-   
-    while (!UndoRemoveStack.empty())
-        UndoRemoveStack.pop();
+}
 
-    while (!RedoRemoveStack.empty())
-        RedoRemoveStack.pop();
+void Game::ClearRedo()
+{
+    while (!RedoStack.empty())
+        RedoStack.pop();
 
+    while (!RedoObjectStack.empty())
+        RedoObjectStack.pop();
 }
 
 void Game::Undo()
@@ -781,40 +772,32 @@ void Game::Undo()
         SceneObject* currentObject;
         int index;
         
-
         // add to redo stack
         RedoStack.push(action);
-        
         UndoStack.pop();
        
+        oldObject = UndoObjectStack.top();
+        UndoObjectStack.pop();
 
         switch (action)
         {
         case Action::ADD:
-            oldObject = UndoAddStack.top();
             currentObject = GetObjectByID(oldObject.ID, index);
-            UndoAddStack.pop();
+            RedoObjectStack.push(oldObject);
             DeleteSceneObject(index);
             m_topID--;
             //MessageBox(NULL, L"Add object undone.", L"Notification", MB_OK);
             break;
         case Action::MODIFY:
-            oldObject = UndoModifyStack.top();
             currentObject = GetObjectByID(oldObject.ID, index);
-            RedoModifyStack.push(*currentObject);
-            UndoModifyStack.pop();
+            RedoObjectStack.push(*currentObject);
             ApplyChanges(currentObject, oldObject);
             //MessageBox(NULL, L"Modify object undone.", L"Notification", MB_OK);
             break;
         case Action::REMOVE:
-            // can't re-use old ID in case new object has been made that uses it
-            oldObject = UndoRemoveStack.top();
-            UndoRemoveStack.pop();
-            AddSceneObject();
+            m_sceneGraph->push_back(oldObject);
             currentObject = &m_sceneGraph->back();
-            ApplyChanges(currentObject, oldObject);
-            currentObject->ID = m_topID;
-            RedoRemoveStack.push(*currentObject);
+            RedoObjectStack.push(*currentObject);
             //MessageBox(NULL, L"Remove object undone.", L"Notification", MB_OK);
             break;
         }
@@ -835,26 +818,25 @@ void Game::Redo()
         UndoStack.push(action);
         RedoStack.pop();
         
+        oldObject = RedoObjectStack.top();
+        RedoObjectStack.pop();
 
         switch (action)
         {
         case Action::ADD:
-            AddSceneObject();
+            m_sceneGraph->push_back(oldObject);
+            UndoObjectStack.push(m_sceneGraph->back());
             //MessageBox(NULL, L"Add object redone.", L"Notification", MB_OK);
             break;
         case Action::MODIFY:
-            oldObject = RedoModifyStack.top();
             currentObject = GetObjectByID(oldObject.ID, index);
-            UndoModifyStack.push(*currentObject);
-            RedoModifyStack.pop();
+            UndoObjectStack.push(*currentObject);
             ApplyChanges(currentObject, oldObject);
             //MessageBox(NULL, L"Modify object redone.", L"Notification", MB_OK);
             break;
         case Action::REMOVE:
-            oldObject = RedoRemoveStack.top();
             currentObject = GetObjectByID(oldObject.ID, index);
-            RedoRemoveStack.pop();
-            UndoRemoveStack.push(*currentObject);
+            UndoObjectStack.push(*currentObject);
             DeleteSceneObject(index);
             //MessageBox(NULL, L"Remove object redone.", L"Notification", MB_OK);
             break;
@@ -991,7 +973,7 @@ void Game::AddSceneObject()
     }
 
 
-    AddToAddStack(newSceneObject);
+    
     //send completed object to scenegraph
     m_sceneGraph->push_back(newSceneObject);
 

@@ -296,6 +296,7 @@ void ToolMain::onActionNewObject()
 {
 	m_d3dRenderer.AddAction(Action::ADD);
 	m_d3dRenderer.AddSceneObject();
+	m_d3dRenderer.AddToObjectStack(m_sceneGraph.back());
 	m_d3dRenderer.FocusObject(m_selectedObject);
 }
 
@@ -304,7 +305,7 @@ void ToolMain::onActionDelObject()
 	if (m_selectedObject != -1)
 	{
 		m_d3dRenderer.AddAction(Action::REMOVE);
-		m_d3dRenderer.AddToRemoveStack(m_sceneGraph.at(m_selectedObject));
+		m_d3dRenderer.AddToObjectStack(m_sceneGraph.at(m_selectedObject));
 
 		m_d3dRenderer.DeleteSceneObject(m_selectedObject);
 	}
@@ -351,6 +352,8 @@ void ToolMain::onActionPaste() // merge with new object? shares a lot of the sam
 			}
 		}
 
+		m_d3dRenderer.AddAction(Action::ADD);
+		m_d3dRenderer.AddToObjectStack(newSceneObject);
 		//send completed object to scenegraph
 		m_sceneGraph.push_back(newSceneObject);
 
@@ -658,18 +661,6 @@ void ToolMain::UpdateInput(MSG * msg)
 		}
 	}
 
-	if (m_keyArray[8]) // 8 = backspace
-	{
-		if (actionCooldownTimer > actionCooldown)
-		{
-			if (MessageBox(NULL, L"Do you wish to delete this object?", L"Notification", MB_YESNO) == IDYES)
-			{
-				actionCooldownTimer = 0;
-				onActionDelObject();
-				m_keyArray[8] = false;
-			}
-		}
-	}
 
 	if (m_keyArray[9]) // 9 = tab
 	{
