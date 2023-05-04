@@ -20,11 +20,10 @@ Game::Game()
     m_deviceResources->RegisterDeviceNotify(this);
 	m_displayList.clear();
 	
-	//initial Settings
-	//modes
+	// Set initial values
 	m_grid = false;
-    wireframeObjects = false;
-    wireframeTerrain = false;
+    m_wireframeObjects = false;
+    m_wireframeTerrain = false;
     m_highlight = true;
     m_focus = 2;
     m_focusMin = 1;
@@ -33,7 +32,10 @@ Game::Game()
     m_sculptModeActive = false;
     m_ManipulatorUndoFlag = false;
     m_spherePos = DirectX::SimpleMath::Vector3(0,0,0);
+    m_spawnDistance = 3;
+    m_toolbarHeight = 16;
     m_terrainSculpter.SetInput(&m_InputCommands);
+    m_terrainSculpter.SetToolbarHeight(m_toolbarHeight);
 }
 
 Game::~Game()
@@ -67,6 +69,7 @@ void Game::Initialize(HWND window, int width, int height)
 
     GetClientRect(window, &m_ScreenDimensions);
 
+    // Create primitive sphere
     m_sphere = GeometricPrimitive::CreateSphere(m_deviceResources->GetD3DDeviceContext());
 
 #ifdef DXTK_AUDIO
@@ -125,37 +128,40 @@ void Game::Tick(InputCommands *Input)
 // Updates the world.
 void Game::Update(DX::StepTimer const& timer)
 {
-    //update camera with inputs
-    camera.Update(timer, &m_InputCommands);
+    // Update camera with inputs.
+    m_camera.Update(timer, &m_InputCommands);
 
+    // When in sculpt mode...
     if (m_sculptModeActive)
     {
-        if (m_InputCommands.LMBDown)
+        if (m_InputCommands.LMBDown) // if lmb is down, sculpt and update the triangle list for snapping objects to ground
         {
             m_terrainSculpter.Sculpt(&m_displayChunk, m_spherePos, timer);
+            m_objectManipulator.CreateTriangles(&m_displayChunk);
         }
     }
-    else
+    else // when in object manipulation mode, update object manipulator
     {
-        objectManipulator.Update(timer, &m_InputCommands, &camera);
+        m_objectManipulator.Update(timer, &m_InputCommands, &m_camera);
     }
 
-
-    if (objectManipulator.GetActive() && objectManipulator.GetClickLength() > 0.2f && !m_ManipulatorUndoFlag)
+    // Only register object manipulation inputs for undo if they last for more than 0.2s to prevent single clicks to select from being registered as actions
+    if (m_objectManipulator.GetActive() && m_objectManipulator.GetClickLength() > 0.2f && !m_ManipulatorUndoFlag)
     {
         m_ManipulatorUndoFlag = true;
         AddAction(Action::MODIFY);
-        AddToObjectStack(objectManipulator.GetInitialObject());
+        AddToObjectStack(m_objectManipulator.GetInitialObject());
     }
-    else if (!objectManipulator.GetActive())
+    else if (!m_objectManipulator.GetActive())
     {
         m_ManipulatorUndoFlag = false;
     }
 
-    objectManipulator.SnapToGround(&m_displayChunk);
+    // Snap object to ground if needed
+    m_objectManipulator.SnapToGround(&m_displayChunk);
 
 	//apply camera vectors
-    m_view = Matrix::CreateLookAt(camera.GetPosition(), camera.GetLookAt(), Vector3::UnitY);
+    m_view = Matrix::CreateLookAt(m_camera.GetPosition(), m_camera.GetLookAt(), Vector3::UnitY);
 
     m_batchEffect->SetView(m_view);
     m_batchEffect->SetWorld(Matrix::Identity);
@@ -226,9 +232,11 @@ void Game::Render()
         {
 
             m_deviceResources->PIXBeginEvent(L"Draw model");
+
+
             if (m_currentSelection)
             {
-
+                // If the current object being rendered is the selected object, and highlights are enabled. Toggle fog on.
                 if (i == *m_currentSelection && m_highlight)
                 {
                     m_displayList[i].m_model->UpdateEffects([&](IEffect* effect)
@@ -237,20 +245,20 @@ void Game::Render()
                     if (fog)
                     {
 
-
-                        float dist = DirectX::SimpleMath::Vector3(camera.GetPosition() - m_displayList[i].m_model->meshes[0]->boundingBox.Center).Length();
+                        // Distance from camera to centre of object
+                        float dist = DirectX::SimpleMath::Vector3(m_camera.GetPosition() - m_displayList[i].m_model->meshes[0]->boundingBox.Center).Length();
 
                         fog->SetFogEnabled(true);
 
                         // dynamically adjust the fog intensity based on distance
-                        fog->SetFogStart(-dist / 2); // assuming RH coordiantes
+                        fog->SetFogStart(-dist / 2); 
                         fog->SetFogEnd(dist * 2);
                         fog->SetFogColor(Colors::HotPink);
 
                     }
                         });
                 }
-                else
+                else // Otherwise turn fog off.
                 {
                     m_displayList[i].m_model->UpdateEffects([&](IEffect* effect)
                         {
@@ -274,7 +282,7 @@ void Game::Render()
 
             XMMATRIX local = m_world * XMMatrixTransformation(g_XMZero, Quaternion::Identity, scale, g_XMZero, rotate, translate);
 
-            m_displayList[i].m_model->Draw(context, *m_states, local, m_view, m_projection, wireframeObjects);	//last variable in draw,  make TRUE for wireframe
+            m_displayList[i].m_model->Draw(context, *m_states, local, m_view, m_projection, m_wireframeObjects);	// draw object, wireframe toggle determines how to render it
             
 
 
@@ -288,9 +296,9 @@ void Game::Render()
 	context->OMSetBlendState(m_states->Opaque(), nullptr, 0xFFFFFFFF);
 	context->OMSetDepthStencilState(m_states->DepthDefault(),0);
 	context->RSSetState(m_states->CullNone());
-    if (wireframeTerrain)
+    if (m_wireframeTerrain) // render wireframe if enabled
     {
-        context->RSSetState(m_states->Wireframe());		//uncomment for wireframe
+        context->RSSetState(m_states->Wireframe());		
     }
 	
     
@@ -298,19 +306,23 @@ void Game::Render()
 	//Render the batch,  This is handled in the Display chunk becuase it has the potential to get complex
 	m_displayChunk.RenderBatch(m_deviceResources);
    
+    // If in the sculpt mode, draw sphere at mouse position
     if (m_sculptModeActive)
     {
         float rad = m_terrainSculpter.GetRadius() * 2; 
-        const XMVECTORF32 scale = { rad, rad, rad };
-        m_spherePos = LineTraceTerrain();
+        
+        m_spherePos = LineTraceTerrain(); // Sphere is positioned where the deprojected mouse click line trace hits the terrain.
 
+        // Create matrix for transforming sphere into position
         const XMVECTORF32 translate = { m_spherePos.x, m_spherePos.y, m_spherePos.z };
-
-        //convert degrees into radians for rotation matrix
         XMVECTOR rotate = Quaternion::CreateFromYawPitchRoll(0, 0, 0);
-
+        const XMVECTORF32 scale = { rad, rad, rad };
         XMMATRIX local = m_world * XMMatrixTransformation(g_XMZero, Quaternion::Identity, scale, g_XMZero, rotate, translate);
+
+        // Semi-transparent colour
         DirectX::XMVECTOR colour = DirectX::XMVectorSet(1, 0, 1, 0.25);
+
+        // If possible to sculpt at the mouse's position, draw the sphere
         if (m_terrainSculpter.m_canSculpt)
         {
             m_sphere->Draw(local, m_view, m_projection, colour);
@@ -320,7 +332,7 @@ void Game::Render()
     //CAMERA POSITION ON HUD
     m_sprites->Begin();
     //WCHAR   Buffer[256];
-    std::wstring var = L"Cam X: " + std::to_wstring(camera.GetPosition().x) + L"Cam Z: " + std::to_wstring(camera.GetPosition().z);
+    std::wstring var = L"Camera - X: " + std::to_wstring(m_camera.GetPosition().x) + L", Y: " + std::to_wstring(m_camera.GetPosition().y) + L", Z: " + std::to_wstring(m_camera.GetPosition().z);
     m_font->DrawString(m_sprites.get(), var.c_str(), XMFLOAT2(100, 10), Colors::Yellow);
     m_sprites->End();
 
@@ -435,7 +447,7 @@ void Game::BuildDisplayList(std::vector<SceneObject> * SceneGraph)
 	auto device = m_deviceResources->GetD3DDevice();
 	auto devicecontext = m_deviceResources->GetD3DDeviceContext();
     m_sceneGraph = SceneGraph;
-    m_topID = m_sceneGraph->back().ID;
+    m_topID = FindHighestID(SceneGraph);
 
 	if (!m_displayList.empty())		//is the vector empty
 	{
@@ -511,10 +523,10 @@ void Game::BuildDisplayList(std::vector<SceneObject> * SceneGraph)
 		
 	}
 		
+    // Set object for manipulating
     if (*m_currentSelection != -1)
     {
-
-        objectManipulator.SetObject(&m_displayList[*m_currentSelection]);
+        m_objectManipulator.SetObject(&m_displayList[*m_currentSelection]);
     }
 		
 }
@@ -527,6 +539,7 @@ void Game::BuildDisplayChunk(ChunkObject * SceneChunk)
 	m_displayChunk.LoadHeightMap(m_deviceResources);
 	m_displayChunk.m_terrainEffect->SetProjection(m_projection);
 	m_displayChunk.InitialiseBatch();
+    m_objectManipulator.CreateTriangles(&m_displayChunk); // generate triangle data
 }
 
 void Game::SaveDisplayChunk(ChunkObject * SceneChunk)
@@ -536,19 +549,20 @@ void Game::SaveDisplayChunk(ChunkObject * SceneChunk)
 
 void Game::SetManipulationMode(ManipulationMode mode)
 {
-    objectManipulator.SetMode(mode);
+    m_objectManipulator.SetMode(mode);
 }
 
 ManipulationMode Game::GetManipulationMode()
 {
-    return objectManipulator.GetMode();
+    return m_objectManipulator.GetMode();
 }
 
 DirectX::SimpleMath::Vector3 Game::LineTraceTerrain()
 {
-    objectManipulator.CreateTriangles(&m_displayChunk); // change to only do this when updating terrain
-    std::vector<Triangle> triangles = objectManipulator.GetTriangles();
+    // Get terrain triangles
+    std::vector<Triangle> triangles = m_objectManipulator.GetTriangles();
 
+    // Near and far plane of click
     const XMVECTOR nearSource = XMVectorSet(m_InputCommands.pickerX, m_InputCommands.pickerY, 0.0f, 1.0f);
     const XMVECTOR farSource = XMVectorSet(m_InputCommands.pickerX, m_InputCommands.pickerY, 1.0f, 1.0f);
 
@@ -566,6 +580,7 @@ DirectX::SimpleMath::Vector3 Game::LineTraceTerrain()
     DirectX::SimpleMath::Vector3 rayVector = DirectX::SimpleMath::Vector3(pickingVector);
     DirectX::SimpleMath::Vector3 intersectionPoint;
 
+    // Check if ray intersects each triangle. If it does, it is possible to sculpt the terrain.
     for (Triangle triangle : triangles)
     {
         if (ObjectManipulator::RayIntersectsTriangle(rayOrigin, rayVector, &triangle, intersectionPoint))
@@ -590,16 +605,18 @@ int Game::MousePicking(int curID)
     }
 
     GetClientRect(ActiveWindow, &m_ScreenDimensions); // update screen dimensions if window size has changed
+
+
     int selectedID = -1;
     float pickedDistance = 0;
-    float closestDistance = 9999999;
+    float closestDistance = 9999999; // big number for initial closest distance, first object will be closer than this
     bool hit = false;
 
     std::vector<int> intersectedObjects;
     std::vector<float> intersectedDistances;
 
 
-    if (m_InputCommands.pickerY > 16)
+    if (m_InputCommands.pickerY > m_toolbarHeight) // only check if the user has clicked below the toolbar
     {
 
     //setup near and far planes of frustum with mouse X and mouse y passed down from Toolmain. 
@@ -642,7 +659,7 @@ int Game::MousePicking(int curID)
         }
     }
 
-    // add models to list. check their current ids. if none are current id, select closest. if one is current id, switch to other object.
+    // Add models to vector and check their current IDs. If none are the current ID, select closest. If one is current ID, switch to next object.
     for (int i = 0; i < intersectedObjects.size(); i++)
     {
         if (intersectedObjects[i] == curID)
@@ -660,19 +677,19 @@ int Game::MousePicking(int curID)
         }
         else if (intersectedDistances[i] < closestDistance)
         {
-
            selectedID = intersectedObjects[i];
            closestDistance = intersectedDistances[i];
         }
     }
 
+    // If valid object found, set the object manipulator's object
     if (selectedID >= 0)
     {
-        objectManipulator.SetObject(&m_displayList[selectedID]);
+        m_objectManipulator.SetObject(&m_displayList[selectedID]);
     }
     else
     {
-        objectManipulator.SetObject(NULL);
+        m_objectManipulator.SetObject(NULL);
     }
     
     //if we got a hit.  return it.  
@@ -689,39 +706,37 @@ void Game::FocusObject(int objID) // moves camera to the object
 {
     if (objID >= 0) // make sure there is a selected object
     {
-        // calculate forward of object, but with fixed up vector
-        // move camera to forward + focus distance from object. lerp if you want to be fancy
-        // rotate camera to face object
-        // focus distance based on object size? difficult to find size, maybe have fixed distance. or orbit camera with scroll wheel to zoom in and out
+        // Position of object used for calculating new camera position
         DirectX::SimpleMath::Vector3 objPosition, newCamPosition;
         objPosition = m_displayList[objID].m_position;
 
-        // focus on centre of mesh
+        // Focus on centre of mesh
         objPosition += m_displayList[objID].m_model.get()->meshes[0]->boundingBox.Center * m_displayList[objID].m_scale.x;
 
+        // Calculate focus distance
         auto bounds = m_displayList[objID].m_model.get()->meshes[0]->boundingBox.Extents;
-        
-       
         float dimensions[3] = { bounds.x, bounds.y, bounds.z };
-        float focusDistance = *std::max_element(dimensions, dimensions + 3) * abs(m_displayList[objID].m_scale.x) * m_focus; // get largest dimension, then orbit at twice that length.
+        float focusDistance = *std::max_element(dimensions, dimensions + 3) * abs(m_displayList[objID].m_scale.x) * m_focus; // get largest dimension, then orbit at focus distance multiplier.
 
-       
-        newCamPosition = objPosition + camera.GetForward() * -focusDistance; 
-        camera.SetPosition(newCamPosition);
+        // Update camera position, starts lerping
+        newCamPosition = objPosition + m_camera.GetForward() * -focusDistance; 
+        m_camera.SetPosition(newCamPosition);
     }
 }
 
 void Game::ScrollWheel(short delta)
 {
-    if (delta > 0)
+    // Scroll wheel behaviour.
+    if (delta > 0) // Decrease focus distance.
     {
         m_focus -= m_timer.GetElapsedSeconds() * m_focusZoomSpeed;
     }
-    else
+    else // Increase focus distance.
     {
         m_focus += m_timer.GetElapsedSeconds() * m_focusZoomSpeed;
     }
 
+    // Clamp to min and max values.
     if (m_focus < m_focusMin)
     {
         m_focus = m_focusMin;
@@ -734,120 +749,128 @@ void Game::ScrollWheel(short delta)
 
 void Game::AddToObjectStack(SceneObject object)
 {
-    ClearRedo();
-    UndoObjectStack.push(object);
+    ClearRedo(); // new branch so can no longer redo
+    m_undoObjectStack.push(object); // add object to undo stack
 }
 
 void Game::ClearUndoRedo()
 {
-    while (!UndoStack.empty())
-        UndoStack.pop();
+    // Pop all items from stacks
+    while (!m_undoStack.empty())
+        m_undoStack.pop();
     
-    while (!RedoStack.empty())
-        RedoStack.pop();
+    while (!m_redoStack.empty())
+        m_redoStack.pop();
     
-    while (!UndoObjectStack.empty())
-        UndoObjectStack.pop();
+    while (!m_undoObjectStack.empty())
+        m_undoObjectStack.pop();
 
-    while (!RedoObjectStack.empty())
-        RedoObjectStack.pop();
+    while (!m_redoObjectStack.empty())
+        m_redoObjectStack.pop();
 
 }
 
 void Game::ClearRedo()
 {
-    while (!RedoStack.empty())
-        RedoStack.pop();
+    // Pop all items from redo stack
+    while (!m_redoStack.empty())
+        m_redoStack.pop();
 
-    while (!RedoObjectStack.empty())
-        RedoObjectStack.pop();
+    while (!m_redoObjectStack.empty())
+        m_redoObjectStack.pop();
 }
 
 void Game::Undo()
 {
-    if (!UndoStack.empty())
+    if (!m_undoStack.empty()) // only works when there are actions to undo
     {
-        Action action = UndoStack.top();
-        SceneObject oldObject;
+        // Get action and object
+        Action action = m_undoStack.top();
+        SceneObject oldObject = m_undoObjectStack.top();
         SceneObject* currentObject;
         int index;
         
-        // add to redo stack
-        RedoStack.push(action);
-        UndoStack.pop();
-       
-        oldObject = UndoObjectStack.top();
-        UndoObjectStack.pop();
+        // Add to redo stack, pop undo stakcs
+        m_redoStack.push(action);
+        m_undoStack.pop();
+        m_undoObjectStack.pop();
 
         switch (action)
         {
         case Action::ADD:
+            // Delete the object, push the old one to the redo stack
             currentObject = GetObjectByID(oldObject.ID, index);
-            RedoObjectStack.push(oldObject);
+            m_redoObjectStack.push(oldObject);
             DeleteSceneObject(index);
             m_topID--;
             //MessageBox(NULL, L"Add object undone.", L"Notification", MB_OK);
             break;
         case Action::MODIFY:
+            // Apply changes from old object to the current object after pushing the current object to the stack
             currentObject = GetObjectByID(oldObject.ID, index);
-            RedoObjectStack.push(*currentObject);
+            m_redoObjectStack.push(*currentObject);
             ApplyChanges(currentObject, oldObject);
             //MessageBox(NULL, L"Modify object undone.", L"Notification", MB_OK);
             break;
         case Action::REMOVE:
+            // Add the object back to the scene graph, push to redo stack
             m_sceneGraph->push_back(oldObject);
             currentObject = &m_sceneGraph->back();
-            RedoObjectStack.push(*currentObject);
+            m_redoObjectStack.push(*currentObject);
             //MessageBox(NULL, L"Remove object undone.", L"Notification", MB_OK);
             break;
         }
-        BuildDisplayList(m_sceneGraph);
+
+        BuildDisplayList(m_sceneGraph); // rebuild display list
     }
 }
 
 void Game::Redo()
 {
-    if (!RedoStack.empty())
+    if (!m_redoStack.empty()) // only works when there are actions to redo
     {
-        Action action = RedoStack.top();
-        SceneObject oldObject;
+        // Get action and object
+        Action action = m_redoStack.top();
+        SceneObject oldObject = m_redoObjectStack.top();
         SceneObject* currentObject;
         int index;
 
-        // add back to undo stack
-        UndoStack.push(action);
-        RedoStack.pop();
-        
-        oldObject = RedoObjectStack.top();
-        RedoObjectStack.pop();
+        // add back to undo stack, pop redo stacks
+        m_undoStack.push(action);
+        m_redoStack.pop();
+        m_redoObjectStack.pop();
 
         switch (action)
         {
         case Action::ADD:
+            // Add object back to scene graph and undo stack
             m_sceneGraph->push_back(oldObject);
-            UndoObjectStack.push(m_sceneGraph->back());
+            m_undoObjectStack.push(m_sceneGraph->back());
             //MessageBox(NULL, L"Add object redone.", L"Notification", MB_OK);
             break;
         case Action::MODIFY:
+            // Apply changes from old object to the current object after pushing the current object to the stack
             currentObject = GetObjectByID(oldObject.ID, index);
-            UndoObjectStack.push(*currentObject);
+            m_undoObjectStack.push(*currentObject);
             ApplyChanges(currentObject, oldObject);
             //MessageBox(NULL, L"Modify object redone.", L"Notification", MB_OK);
             break;
         case Action::REMOVE:
+            // Delete object from the scene graph
             currentObject = GetObjectByID(oldObject.ID, index);
-            UndoObjectStack.push(*currentObject);
+            m_undoObjectStack.push(*currentObject);
             DeleteSceneObject(index);
             //MessageBox(NULL, L"Remove object redone.", L"Notification", MB_OK);
             break;
         }
-        BuildDisplayList(m_sceneGraph);
+        BuildDisplayList(m_sceneGraph); // rebuild display list
     }
 }
 
 SceneObject* Game::GetObjectByID(int ID, int& returnIndex)
 {
-    for (int i = 0; i < m_sceneGraph->size(); i++)
+    // check each objects ID, return the object and position in the scene graph if there is a match
+    for (int i = 0; i < m_sceneGraph->size(); i++) 
     {
         if (m_sceneGraph->at(i).ID == ID)
         {
@@ -859,8 +882,39 @@ SceneObject* Game::GetObjectByID(int ID, int& returnIndex)
     return nullptr;
 }
 
+void Game::PositionClashCheck(SceneObject* newSceneObject)
+{
+    // Check for position clash when adding new objects
+    bool positionCheckComplete = false;
+    bool clashFound = false;
+    DirectX::SimpleMath::Vector3 position = DirectX::SimpleMath::Vector3(newSceneObject->posX, newSceneObject->posY, newSceneObject->posZ);
+
+    while (!positionCheckComplete)
+    {
+        clashFound = false;
+
+        for (SceneObject object : *m_sceneGraph)
+        {
+            if (newSceneObject->posX == object.posX && newSceneObject->posY == object.posY && newSceneObject->posZ == object.posZ) // if position matches, move to the right
+            {
+                position += m_camera.GetRight();
+                newSceneObject->posX = position.x;
+                newSceneObject->posY = position.y;
+                newSceneObject->posZ = position.z;
+                clashFound = true;
+            }
+        }
+
+        if (!clashFound)
+        {
+            positionCheckComplete = true;
+        }
+    }
+}
+
 void Game::ApplyChanges(SceneObject* newObject, SceneObject oldObject)
 {
+    // Assign relevant values
     newObject->posX = oldObject.posX;
     newObject->posY = oldObject.posY;
     newObject->posZ = oldObject.posZ;
@@ -878,6 +932,7 @@ void Game::ApplyChanges(SceneObject* newObject, SceneObject oldObject)
 
 void Game::DeleteSceneObject(int index)
 {
+    // Remove object from scene graph
     m_sceneGraph->erase(m_sceneGraph->begin() + index);
     *m_currentSelection = -1;
     BuildDisplayList(m_sceneGraph);
@@ -886,93 +941,27 @@ void Game::DeleteSceneObject(int index)
 
 void Game::AddSceneObject()
 {
+    // Add object to scene graph
+    // New ID
     m_topID++;
 
-
+    // Position in front of camerea
+    DirectX::SimpleMath::Vector3 position = m_camera.GetPosition() + m_camera.GetForward() * m_spawnDistance;
+    
+    // Default values, rest set in constructor
     SceneObject newSceneObject;
     newSceneObject.ID = m_topID;
-    newSceneObject.chunk_ID = 0;
     newSceneObject.model_path = "database/data/placeholder.cmo";
     newSceneObject.tex_diffuse_path = "database/data/placeholder.dds";
-    newSceneObject.posX = 0;
-    newSceneObject.posY = 5;
-    newSceneObject.posZ = 0;
-    newSceneObject.rotX = 0;
-    newSceneObject.rotY = 0;
-    newSceneObject.rotZ = 0;
+    newSceneObject.posX = position.x;
+    newSceneObject.posY = position.y;
+    newSceneObject.posZ = position.z;
     newSceneObject.scaX = 1;
     newSceneObject.scaY = 1;
     newSceneObject.scaZ = 1;
-    newSceneObject.render = true;
-    newSceneObject.collision = 0;
-    newSceneObject.collision_mesh = "";
-    newSceneObject.collectable = 0;
-    newSceneObject.destructable = 0;
-    newSceneObject.health_amount = 0;
-    newSceneObject.editor_render = 1;
-    newSceneObject.editor_texture_vis = 1;
-    newSceneObject.editor_normals_vis = 0;
-    newSceneObject.editor_collision_vis = 0;
-    newSceneObject.editor_pivot_vis = 0;
-    newSceneObject.pivotX = 0;
-    newSceneObject.pivotY = 0;
-    newSceneObject.pivotZ = 0;
-    newSceneObject.snapToGround = 0;
-    newSceneObject.AINode = 0;
-    newSceneObject.audio_path = "";
-    newSceneObject.volume = 0;
-    newSceneObject.pitch = 0;
-    newSceneObject.pan = 0;
-    newSceneObject.one_shot = 0;
-    newSceneObject.play_on_init = 0;
-    newSceneObject.play_in_editor = 0;
-    newSceneObject.min_dist = 0;
-    newSceneObject.max_dist = 0;
-    newSceneObject.camera = 0;
-    newSceneObject.path_node = 0;
-    newSceneObject.path_node_start = 0;
-    newSceneObject.path_node_end = 0;
-    newSceneObject.parent_id = 0;
-    newSceneObject.editor_wireframe = 0;
-    newSceneObject.name = "Name";
 
-    /*
-    newSceneObject.light_type = sqlite3_column_int(pResults, 45);
-    newSceneObject.light_diffuse_r = sqlite3_column_double(pResults, 46);
-    newSceneObject.light_diffuse_g = sqlite3_column_double(pResults, 47);
-    newSceneObject.light_diffuse_b = sqlite3_column_double(pResults, 48);
-    newSceneObject.light_specular_r = sqlite3_column_double(pResults, 49);
-    newSceneObject.light_specular_g = sqlite3_column_double(pResults, 50);
-    newSceneObject.light_specular_b = sqlite3_column_double(pResults, 51);
-    newSceneObject.light_spot_cutoff = sqlite3_column_double(pResults, 52);
-    newSceneObject.light_constant = sqlite3_column_double(pResults, 53);
-    newSceneObject.light_linear = sqlite3_column_double(pResults, 54);
-    newSceneObject.light_quadratic = sqlite3_column_double(pResults, 55);
-    */
-
-    bool positionCheckComplete = false;
-    bool clashFound = false;
-
-    while (!positionCheckComplete) // prevent overlapping objects
-    {
-        clashFound = false;
-
-        for (SceneObject object : *m_sceneGraph)
-        {
-            if (newSceneObject.posX == object.posX && newSceneObject.posY == object.posY && newSceneObject.posZ == object.posZ)
-            {
-                newSceneObject.posX += 2;
-                clashFound = true;
-            }
-        }
-
-        if (!clashFound)
-        {
-            positionCheckComplete = true;
-        }
-    }
-
-
+    // Adjust object position if another object already shares its position
+    PositionClashCheck(&newSceneObject);
     
     //send completed object to scenegraph
     m_sceneGraph->push_back(newSceneObject);
@@ -981,6 +970,22 @@ void Game::AddSceneObject()
     *m_currentSelection = GetDisplayList()->size() - 1;
     GetManipulator()->SetObject(&GetDisplayList()->back());
    
+}
+
+int Game::FindHighestID(std::vector<SceneObject>* sceneGraph)
+{
+    // Returns highest ID in scene graph
+    int highestID = -1;
+    
+    for (SceneObject object : *sceneGraph)
+    {
+        if (object.ID > highestID)
+        {
+            highestID = object.ID;
+        }
+    }
+
+    return highestID;
 }
 
 #ifdef DXTK_AUDIO

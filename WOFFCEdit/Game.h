@@ -21,6 +21,7 @@
 // A basic game implementation that creates a D3D11 device and
 // provides a game loop.
 
+// Undo/redo actions
 enum class Action
 {
 	MODIFY,
@@ -63,12 +64,17 @@ public:
 	void SaveDisplayChunk(ChunkObject *SceneChunk);	//saves geometry et al
 	void ClearDisplayList();
 	std::vector<DisplayObject>* GetDisplayList() { return &m_displayList; };
+	float GetDeltaTime() { return m_timer.GetElapsedSeconds(); };
+
+	// Object manipulation functions
+	int MousePicking(int curID);
 	void SetManipulationMode(ManipulationMode mode);
-	ManipulationMode GetManipulationMode();
 	void SetSelection(int* sel) { m_currentSelection = sel; };
-	void SetManipulatorSceneGraph(std::vector<SceneObject>* sceneGraph, int* sel) { objectManipulator.SetSceneGraph(sceneGraph, sel); };
-	//void SetSceneGraph(std::vector<SceneObject>* sceneGraph) { m_sceneGraph = sceneGraph; };
-	ObjectManipulator* GetManipulator() { return &objectManipulator; };
+	void SetManipulatorSceneGraph(std::vector<SceneObject>* sceneGraph, int* sel) { m_objectManipulator.SetSceneGraph(sceneGraph, sel); };
+	ManipulationMode GetManipulationMode();
+	ObjectManipulator* GetManipulator() { return &m_objectManipulator; };
+
+	// Sculpt mode functions
 	DirectX::SimpleMath::Vector3 LineTraceTerrain();
 	bool GetSculptModeActive() { return m_sculptModeActive; };
 	void SetSculptModeActive(bool active) { m_sculptModeActive = active; }
@@ -76,43 +82,53 @@ public:
 	void SetSculptMode(SculptMode mode) { m_terrainSculpter.SetMode(mode); };
 	TerrainSculpter* GetSculpter() { return &m_terrainSculpter; };
 
-	void ToggleWireframeObjects() { wireframeObjects = !wireframeObjects; };
-	void ToggleWireframeTerrain() { wireframeTerrain = !wireframeTerrain; };
+	// Wireframe functions
+	void ToggleWireframeObjects() { m_wireframeObjects = !m_wireframeObjects; };
+	void ToggleWireframeTerrain() { m_wireframeTerrain = !m_wireframeTerrain; };
+
+	// Highlight object getter/setter
 	void SetHighlight(bool highlight) { m_highlight = highlight; };
 	bool GetHighlight() { return m_highlight; };
-	int MousePicking(int curID);
+
+	// Camera functions
 	void FocusObject(int objID);
-	float GetDeltaTime() { return m_timer.GetElapsedSeconds(); };
 	void ScrollWheel(short delta);
-	Camera* GetCamera() { return &camera; };
+	Camera* GetCamera() { return &m_camera; };
 	float GetZoomSpeed() { return m_focusZoomSpeed; };
 	void SetZoomSpeed(float s) { m_focusZoomSpeed = s; };
+
+	// Getters for display chunk and toolbar height
 	DisplayChunk* GetDisplayChunk() { return &m_displayChunk; };
-	void AddAction(Action action) { UndoStack.push(action); };
+	float GetToolbarHeight() { return m_toolbarHeight; };
+
+	// Undo/redo functions
+	std::stack<Action> GetUndoStack() { return m_undoStack; };
+	std::stack<Action> GetRedoStack() { return m_redoStack; };
+	void Undo();
+	void Redo();
+	void AddAction(Action action) { m_undoStack.push(action); };
 	void AddToObjectStack(SceneObject object);
 	void ClearUndoRedo();
 	void ClearRedo();
 
-	std::stack<Action> GetUndoStack() { return UndoStack; };
-	std::stack<Action> GetRedoStack() { return RedoStack; };
-	void Undo();
-	void Redo();
+	// Object functions
+	int FindHighestID(std::vector<SceneObject>* sceneGraph);
 	SceneObject* GetObjectByID(int ID, int& returnIndex);
+	void PositionClashCheck(SceneObject* object);
+
+	// Add, remove, modify objects
 	void ApplyChanges(SceneObject* newObject, SceneObject oldObject);
 	void DeleteSceneObject(int index);
 	void AddSceneObject();
-
+	
+	// Highest ID, used for making new objects
 	int m_topID;
 #ifdef DXTK_AUDIO
 	void NewAudioDevice();
 #endif
 
 private:
-
-	std::stack<Action> UndoStack;  // clear stacks on save/load?
-	std::stack<Action> RedoStack;
-	std::stack<SceneObject> UndoObjectStack;
-	std::stack<SceneObject> RedoObjectStack;
+	
 
 	void Update(DX::StepTimer const& timer);
 
@@ -121,34 +137,49 @@ private:
 
 	void XM_CALLCONV DrawGrid(DirectX::FXMVECTOR xAxis, DirectX::FXMVECTOR yAxis, DirectX::FXMVECTOR origin, size_t xdivs, size_t ydivs, DirectX::GXMVECTOR color);
 
-	bool m_sculptModeActive;
-
-	std::vector<SceneObject>* m_sceneGraph;
+	// Undo/redo variables
+	std::stack<Action> m_undoStack;
+	std::stack<Action> m_redoStack;
+	std::stack<SceneObject> m_undoObjectStack;
+	std::stack<SceneObject> m_redoObjectStack;
 	bool m_ManipulatorUndoFlag;
+
+	// Scene graph pointer
+	std::vector<SceneObject>* m_sceneGraph;
+	int* m_currentSelection;
 
 	//tool specific
 	std::vector<DisplayObject>			m_displayList;
 	DisplayChunk						m_displayChunk;
 	InputCommands						m_InputCommands;
 
-	//camera
-	Camera								camera;
-	ObjectManipulator					objectManipulator;
+	// Camera, object manipulation, and terrain editing classes
+	Camera								m_camera;
+	ObjectManipulator					m_objectManipulator;
 	TerrainSculpter						m_terrainSculpter;
-	bool wireframeObjects;
-	bool wireframeTerrain;
+
+	// Toggles
+	bool m_sculptModeActive;
+	bool m_wireframeObjects;
+	bool m_wireframeTerrain;
 	bool m_highlight;
-	int* m_currentSelection;
+
+	// Window properties
 	RECT m_ScreenDimensions;
+	int m_toolbarHeight;
+
+	// Sphere for terrain editing
+	std::unique_ptr<DirectX::GeometricPrimitive> m_sphere;
 	DirectX::SimpleMath::Vector3 m_spherePos;
 
-	
+	// Camera focus variables
 	float m_focus;
 	float m_focusMin;
 	float m_focusMax;
 	float m_focusZoomSpeed;
+	float m_spawnDistance;
 
-	std::unique_ptr<DirectX::GeometricPrimitive> m_sphere;
+	
 	//control variables
 	bool m_grid;							//grid rendering on / off
 	// Device resources.

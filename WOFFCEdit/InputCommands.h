@@ -1,5 +1,6 @@
 #pragma once
 
+// List of inputs that can be used
 struct InputCommands
 {
 	bool forward;

@@ -13,7 +13,7 @@ DisplayChunk::DisplayChunk()
 	m_terrainHeightScale = 0.25;  //convert our 0-256 terrain to 64
 	m_textureCoordStep = 1.0 / (TERRAINRESOLUTION-1);	//-1 becuase its split into chunks. not vertices.  we want tthe last one in each row to have tex coord 1
 	m_terrainPositionScalingFactor = m_terrainSize / (TERRAINRESOLUTION-1);
-	sculptScale = 10;
+	m_sculptScale = 10;
 }
 
 
@@ -182,18 +182,18 @@ void DisplayChunk::UpdateTerrain()
 
 void DisplayChunk::GenerateHeightmap(int index, float magnitude)
 {
-	//insert how YOU want to update the heigtmap here! :D
-	if ((float)m_heightMap[index] + magnitude * sculptScale < 0)
+	// prevent integer overflow
+	if ((float)m_heightMap[index] + magnitude * m_sculptScale < 0)
 	{
 		m_heightMap[index] = 0;
 	}
-	else if ((float)m_heightMap[index] + magnitude * sculptScale > 255) // heightmap uses bytes so 255 is max height
+	else if ((float)m_heightMap[index] + magnitude * m_sculptScale > 255) // heightmap uses bytes so 255 is max height
 	{
 		m_heightMap[index] = 255;
 	}
-	else 
+	else // increase height by magnitude multiplied by scale
 	{
-		m_heightMap[index] += magnitude * sculptScale;
+		m_heightMap[index] += magnitude * m_sculptScale;
 	}
 	
 	UpdateTerrain();
@@ -201,6 +201,7 @@ void DisplayChunk::GenerateHeightmap(int index, float magnitude)
 
 void DisplayChunk::FlattenHeightmap(int index)
 {
+	// Set height map at index to 0
 	m_heightMap[index] = 0;
 	UpdateTerrain();
 }

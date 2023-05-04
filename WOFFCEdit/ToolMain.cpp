@@ -14,21 +14,13 @@ ToolMain::ToolMain()
 	m_databaseConnection = NULL;
 	m_d3dRenderer.SetSelection(&m_selectedObject);
 
-	//zero input commands
-	m_toolInputCommands.forward = false;
-	m_toolInputCommands.back = false;
-	m_toolInputCommands.left = false;
-	m_toolInputCommands.right = false;
-	m_toolInputCommands.shift = false;
-	m_toolInputCommands.ctrl = false;
-
 	ZeroMemory(&m_toolInputCommands, sizeof(InputCommands)); // initialise struct to zero
 
-	haveCopiedObject = false;
-	leftClickTimer = 0;
-	actionCooldown = 0.25;
-	actionCooldownTimer = 0;
-	0xCAFEBABE;
+	// initial values
+	m_haveCopiedObject = false;
+	m_leftClickTimer = 0;
+	m_actionCooldown = 0.25;
+	m_actionCooldownTimer = 0;
 }
 
 
@@ -40,7 +32,6 @@ ToolMain::~ToolMain()
 
 int ToolMain::getCurrentSelectionID()
 {
-
 	return m_selectedObject;
 }
 
@@ -192,8 +183,8 @@ void ToolMain::onActionLoad()
 	//build the renderable chunk 
 	m_d3dRenderer.BuildDisplayChunk(&m_chunk);
 
+	//setup for object manipulation
 	m_d3dRenderer.SetManipulatorSceneGraph(&m_sceneGraph, &m_selectedObject);
-	//m_d3dRenderer.SetSceneGraph(&m_sceneGraph);
 }
 
 void ToolMain::onActionSave()
@@ -282,9 +273,10 @@ void ToolMain::onActionSave()
 		rc = sqlite3_prepare_v2(m_databaseConnection, sqlCommand2.c_str(), -1, &pResults, 0);
 		sqlite3_step(pResults);	
 	}
-	MessageBox(NULL, L"Objects Saved", L"Notification", MB_OK);
+	
+	m_d3dRenderer.GetDisplayChunk()->SaveHeightMap(); // also save height map
 
-	m_d3dRenderer.GetDisplayChunk()->SaveHeightMap();
+	MessageBox(NULL, L"Objects and terrain saved", L"Notification", MB_OK);
 }
 
 void ToolMain::onActionSaveTerrain()
@@ -294,73 +286,62 @@ void ToolMain::onActionSaveTerrain()
 
 void ToolMain::onActionNewObject()
 {
+	// Add action and object to undo stack
 	m_d3dRenderer.AddAction(Action::ADD);
 	m_d3dRenderer.AddSceneObject();
 	m_d3dRenderer.AddToObjectStack(m_sceneGraph.back());
-	m_d3dRenderer.FocusObject(m_selectedObject);
+
+	//m_d3dRenderer.FocusObject(m_selectedObject);
 }
 
 void ToolMain::onActionDelObject()
 {
+	// if an object is selected, add action and object to undo stacks and delete the object
 	if (m_selectedObject != -1)
 	{
 		m_d3dRenderer.AddAction(Action::REMOVE);
 		m_d3dRenderer.AddToObjectStack(m_sceneGraph.at(m_selectedObject));
-
 		m_d3dRenderer.DeleteSceneObject(m_selectedObject);
 	}
 }
 
 void ToolMain::onActionCopy()
 {
+	// if an object is selected, copy it
 	if (m_selectedObject != -1)
 	{
-		haveCopiedObject = true;
-		copiedObject = m_sceneGraph[m_selectedObject];
+		m_haveCopiedObject = true;
+		m_copiedObject = m_sceneGraph[m_selectedObject];
 	}
 }
 
-void ToolMain::onActionPaste() // merge with new object? shares a lot of the same functionality
+void ToolMain::onActionPaste() 
 {
-	if (haveCopiedObject)
+	// If an object has been copied...
+	if (m_haveCopiedObject)
 	{
+		// New ID
 		m_d3dRenderer.m_topID++;
 
+		// Create new scene object with copied properties and 
 		SceneObject newSceneObject;
-		newSceneObject = copiedObject;
-		newSceneObject.ID = m_d3dRenderer.m_topID++;;
+		newSceneObject = m_copiedObject;
+		newSceneObject.ID = m_d3dRenderer.m_topID++;
 
-		bool positionCheckComplete = false;
-		bool clashFound = false;
-
-		while (!positionCheckComplete) // prevent overlapping objects
-		{
-			clashFound = false;
-
-			for (SceneObject object : m_sceneGraph)
-			{
-				if (newSceneObject.posX == object.posX && newSceneObject.posY == object.posY && newSceneObject.posZ == object.posZ)
-				{
-					newSceneObject.posX += 2;
-					clashFound = true;
-				}
-			}
-
-			if (!clashFound)
-			{
-				positionCheckComplete = true;
-			}
-		}
-
+		// Check for clashing positions
+		m_d3dRenderer.PositionClashCheck(&newSceneObject);
+		
+		// Add to undo stacks
 		m_d3dRenderer.AddAction(Action::ADD);
 		m_d3dRenderer.AddToObjectStack(newSceneObject);
+
 		//send completed object to scenegraph
 		m_sceneGraph.push_back(newSceneObject);
 
+		// rebuild display list and select the new object
 		m_d3dRenderer.BuildDisplayList(&m_sceneGraph);
 		m_selectedObject = m_d3dRenderer.GetDisplayList()->size() - 1;
 		m_d3dRenderer.GetManipulator()->SetObject(&m_d3dRenderer.GetDisplayList()->back());
-		m_d3dRenderer.FocusObject(m_selectedObject);
 	}
 }
 
@@ -379,14 +360,16 @@ void ToolMain::Tick(MSG *msg)
 	
 
 	//Renderer Update Call
-	
 	m_d3dRenderer.Tick(&m_toolInputCommands);
-	leftClickTimer += m_d3dRenderer.GetDeltaTime();
-	actionCooldownTimer += m_d3dRenderer.GetDeltaTime();
+
+	// increment timers
+	m_leftClickTimer += m_d3dRenderer.GetDeltaTime();
+	m_actionCooldownTimer += m_d3dRenderer.GetDeltaTime();
 }
 
 void ToolMain::UpdateInput(MSG * msg)
 {
+	// Check if shift key is down, set relevant value in input commands
 	bool isShiftDown = GetKeyState(VK_LSHIFT) < 0;
 
 	if (isShiftDown)
@@ -398,6 +381,7 @@ void ToolMain::UpdateInput(MSG * msg)
 		m_toolInputCommands.shift = false;
 	}
 
+	// Check if ctrl key is down, set relevant value in input commands
 	bool isCtrlDown = GetKeyState(VK_LCONTROL) < 0;
 
 	if (isCtrlDown)
@@ -415,18 +399,23 @@ void ToolMain::UpdateInput(MSG * msg)
 	case WM_KEYDOWN:
 		m_keyArray[msg->wParam] = true;
 
-		if (msg->wParam == VK_SHIFT)
+		// Cooldown used for delete action
+		if (msg->wParam == VK_DELETE)
 		{
-			//m_toolInputCommands.shift = !m_toolInputCommands.shift;
-			
+			if (GetParent(GetActiveWindow()) == 0) // only applies when used on the main window, won't trigger on dialog edit box deletions
+			{
+				if (m_actionCooldownTimer > m_actionCooldown) // if enough time has passed, reset timer and delete object
+				{
+					m_actionCooldownTimer = 0;
+					onActionDelObject();
+				}
+			}
 		}
 
 		break;
 
 	case WM_KEYUP:
 		m_keyArray[msg->wParam] = false;
-
-
 		break;
 
 	case WM_MOUSEMOVE:
@@ -444,22 +433,20 @@ void ToolMain::UpdateInput(MSG * msg)
 	case WM_LBUTTONDOWN:	//mouse button down,  you will probably need to check when its up too
 		//set some flag for the mouse button in inputcommands
 		m_toolInputCommands.LMBDown = true;
-		leftClickTimer = 0;
+		m_leftClickTimer = 0; // reset left click timer
 		break;
 
 	case WM_RBUTTONDOWN:
-		//SetCursor
-		ShowCursor(false);
 		m_toolInputCommands.RMBDown = true;
 		break;
 
 	case WM_LBUTTONUP:
 		m_toolInputCommands.LMBDown = false;
 
-		// only do picking on short clicks. long clicks will do object manipulation.
-		if (leftClickTimer < 0.2f)
+		// only do object picking on short clicks. long clicks will do object manipulation.
+		if (m_leftClickTimer < 0.2f)
 		{
-			if (!m_d3dRenderer.GetSculptModeActive())
+			if (!m_d3dRenderer.GetSculptModeActive()) // only pick objects when not in sculpt mode
 			{
 				m_selectedObject = m_d3dRenderer.MousePicking(m_selectedObject);
 			}
@@ -468,18 +455,34 @@ void ToolMain::UpdateInput(MSG * msg)
 		break;
 
 	case WM_RBUTTONUP:
-		ShowCursor(true);
 		m_toolInputCommands.RMBDown = false;
 		break;
 
 	case WM_MOUSEWHEEL:
 		auto wheelDelta = GET_WHEEL_DELTA_WPARAM(msg->wParam);
-		m_d3dRenderer.ScrollWheel(wheelDelta);
+		m_d3dRenderer.ScrollWheel(wheelDelta); // update scroll wheel input
 		break;
-
+		
+		
+	}
+	
+	// Hiding and showing the cursor when LMB or RMB are pressed within the renderer window.
+	if (GetParent(GetActiveWindow()) == 0 && m_toolInputCommands.pickerY > m_d3dRenderer.GetToolbarHeight()) // if not clicking the main window, we can ignore the click
+	{
+		if ((GetKeyState(VK_LBUTTON) & 0x80) != 0 || (GetKeyState(VK_RBUTTON) & 0x80) != 0)
+		{
+			while (ShowCursor(false) >= 0);
+		}
+		else
+		{
+			while (ShowCursor(true) <= 0);
+		}
+	}
+	else
+	{
+		while (ShowCursor(true) <= 0);
 	}
 
-	
 	//here we update all the actual app functionality that we want.  This information will either be used int toolmain, or sent down to the renderer (Camera movement etc
 	//WASD movement
 	if (m_keyArray['W'])
@@ -490,7 +493,7 @@ void ToolMain::UpdateInput(MSG * msg)
 	
 	if (m_keyArray['S'])
 	{
-		if (m_toolInputCommands.ctrl)
+		if (m_toolInputCommands.ctrl) // save instead when ctrl key is held
 		{
 			onActionSave();
 			m_keyArray['S'] = false;
@@ -501,6 +504,7 @@ void ToolMain::UpdateInput(MSG * msg)
 		}
 	}
 	else m_toolInputCommands.back = false;
+
 	if (m_keyArray['A'])
 	{
 		m_toolInputCommands.left = true;
@@ -512,7 +516,9 @@ void ToolMain::UpdateInput(MSG * msg)
 		m_toolInputCommands.right = true;
 	}
 	else m_toolInputCommands.right = false;
+
 	//rotation
+	/*
 	if (m_keyArray[39]) // 39 = right arrow
 	{
 		m_toolInputCommands.rotRight = true;
@@ -533,6 +539,7 @@ void ToolMain::UpdateInput(MSG * msg)
 		m_toolInputCommands.rotDown = true;
 	}
 	else m_toolInputCommands.rotDown = false;
+	*/
 
 	//elevation
 	if (m_keyArray['Q'])
@@ -547,76 +554,84 @@ void ToolMain::UpdateInput(MSG * msg)
 	}
 	else m_toolInputCommands.up = false;
 
+	// focus object
 	if (m_keyArray['F'])
 	{
 		m_d3dRenderer.FocusObject(m_selectedObject);
 	}
 
+	// copy object
 	if (m_keyArray['C'] && m_toolInputCommands.ctrl)
 	{
 		onActionCopy();
 	}
 
+	// paste object
 	if (m_keyArray['V'] && m_toolInputCommands.ctrl)
 	{
-		if (actionCooldownTimer > actionCooldown)
+		if (m_actionCooldownTimer > m_actionCooldown)
 		{
-			actionCooldownTimer = 0;
+			m_actionCooldownTimer = 0;
 			onActionPaste();
 		}
 	}
 
-
+	// undo 
 	if (m_keyArray['Z'] && m_toolInputCommands.ctrl)
 	{
-		if (actionCooldownTimer > actionCooldown)
+		if (m_actionCooldownTimer > m_actionCooldown)
 		{
-			actionCooldownTimer = 0;
+			m_actionCooldownTimer = 0;
 			GetGame()->Undo();
 		}
 	}
 
+	// redo
 	if (m_keyArray['Y'] && m_toolInputCommands.ctrl)
 	{
-		if (actionCooldownTimer > actionCooldown)
+		if (m_actionCooldownTimer > m_actionCooldown)
 		{
-			actionCooldownTimer = 0;
+			m_actionCooldownTimer = 0;
 			GetGame()->Redo();
 		}
 	}
 
+	// new object
 	if (m_keyArray['N'])
 	{
-		if (actionCooldownTimer > actionCooldown)
+		if (m_actionCooldownTimer > m_actionCooldown)
 		{
-			actionCooldownTimer = 0;
+			m_actionCooldownTimer = 0;
 			onActionNewObject();
 		}
 	}
 
+	// toggle wireframe for objects
 	if (m_keyArray['O'])
 	{
-		if (actionCooldownTimer > actionCooldown)
+		if (m_actionCooldownTimer > m_actionCooldown)
 		{
-			actionCooldownTimer = 0;
+			m_actionCooldownTimer = 0;
 			m_d3dRenderer.ToggleWireframeObjects();
 		}
 	}
 	
+	// toggle wireframe for landscape
 	if (m_keyArray['L'])
 	{
-		if (actionCooldownTimer > actionCooldown)
+		if (m_actionCooldownTimer > m_actionCooldown)
 		{
-			actionCooldownTimer = 0;
+			m_actionCooldownTimer = 0;
 			m_d3dRenderer.ToggleWireframeTerrain();
 		}
 	}
 
+	// Use first sculpt/control mode
 	if (m_keyArray['1'])
 	{
-		if (actionCooldownTimer > actionCooldown)
+		if (m_actionCooldownTimer > m_actionCooldown)
 		{
-			actionCooldownTimer = 0;
+			m_actionCooldownTimer = 0;
 			if (m_d3dRenderer.GetSculptModeActive())
 			{
 				m_d3dRenderer.SetSculptMode(SculptMode::RAISE);
@@ -629,11 +644,12 @@ void ToolMain::UpdateInput(MSG * msg)
 		}
 	}
 
+	// Use second sculpt/control mode
 	if (m_keyArray['2'])
 	{
-		if (actionCooldownTimer > actionCooldown)
+		if (m_actionCooldownTimer > m_actionCooldown)
 		{
-			actionCooldownTimer = 0;
+			m_actionCooldownTimer = 0;
 			if (m_d3dRenderer.GetSculptModeActive())
 			{
 				m_d3dRenderer.SetSculptMode(SculptMode::LOWER);
@@ -645,11 +661,12 @@ void ToolMain::UpdateInput(MSG * msg)
 		}
 	}
 
+	// Use third sculpt/control mode
 	if (m_keyArray['3'])
 	{
-		if (actionCooldownTimer > actionCooldown)
+		if (m_actionCooldownTimer > m_actionCooldown)
 		{
-			actionCooldownTimer = 0;
+			m_actionCooldownTimer = 0;
 			if (m_d3dRenderer.GetSculptModeActive())
 			{
 				m_d3dRenderer.SetSculptMode(SculptMode::FLATTEN);
@@ -661,20 +678,15 @@ void ToolMain::UpdateInput(MSG * msg)
 		}
 	}
 
-
+	// Switch between sculpting and object manipulation
 	if (m_keyArray[9]) // 9 = tab
 	{
-		if (actionCooldownTimer > actionCooldown)
+		if (m_actionCooldownTimer > m_actionCooldown)
 		{
-			actionCooldownTimer = 0;
+			m_actionCooldownTimer = 0;
 			m_d3dRenderer.SetSculptModeActive(!m_d3dRenderer.GetSculptModeActive()); // toggle sculpt mode
 		}
 
 	}
-
-
-	// tab - switch between sculpting and selecting
-	// 1, 2, 3 is sculpt/select mode
-	// backspace or del to delete object
 
 }

@@ -66,6 +66,7 @@ void SelectDialogue::End()
 
 void SelectDialogue::Select()
 {
+	// Change the current selection based on the list box value
 	int index = m_listBox.GetCurSel();
 	CString currentSelectionValue;
 	

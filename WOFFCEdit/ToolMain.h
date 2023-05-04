@@ -18,16 +18,17 @@ public: //methods
 	int		getCurrentSelectionID();										//returns the selection number of currently selected object so that It can be displayed.
 	void	onActionInitialise(HWND handle, int width, int height);			//Passes through handle and hieght and width and initialises DirectX renderer and SQL LITE
 	void	onActionLoad();													//load the current chunk
-	afx_msg	void	onActionSave();											//save the current chunk
+	afx_msg	void	onActionSave();											//save the current chunk and objects
 	afx_msg void	onActionSaveTerrain();									//save chunk geometry
-	afx_msg void onActionNewObject();
-	afx_msg void onActionDelObject();
-	afx_msg void onActionCopy();
-	afx_msg void onActionPaste();
+	afx_msg void	onActionNewObject();									//create new object
+	afx_msg void	onActionDelObject();									//delete selected object
+	afx_msg void	onActionCopy();											//copy object
+	afx_msg void	onActionPaste();										//paste object
 
 	void	Tick(MSG *msg);
 	void	UpdateInput(MSG *msg);
 
+	// getter for game
 	Game*	GetGame() { return &m_d3dRenderer; };
 
 public:	//variables
@@ -52,9 +53,14 @@ private:	//variables
 	int m_height;
 	int m_currentChunk;			//the current chunk of thedatabase that we are operating on.  Dictates loading and saving. 
 	
-	SceneObject copiedObject;
-	bool haveCopiedObject;
-	float leftClickTimer;
-	float actionCooldownTimer;
-	float actionCooldown;
+	// Copy of object for copy-pasting
+	SceneObject m_copiedObject;
+	bool m_haveCopiedObject;
+
+	// For tracking how long left click has been held for
+	float m_leftClickTimer;
+
+	// Cooldown for certain key presses
+	float m_actionCooldownTimer;
+	float m_actionCooldown;
 };

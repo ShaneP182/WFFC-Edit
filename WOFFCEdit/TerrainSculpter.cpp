@@ -2,6 +2,7 @@
 
 TerrainSculpter::TerrainSculpter()
 {
+	// Initial values
 	m_sculptMode = SculptMode::RAISE;
 	m_radius = 5.0f;
 	m_magnitude = 5.0f;
@@ -15,29 +16,40 @@ TerrainSculpter::~TerrainSculpter()
 
 void TerrainSculpter::Sculpt(DisplayChunk* terrain, DirectX::SimpleMath::Vector3 spherePos, DX::StepTimer const& timer)
 {
-	//FIX SCULPTING WHEN PRESSING TOOLBAR
 
-	if (GetParent(GetActiveWindow()) == 0 && m_inputCommands->pickerY > 16 && m_canSculpt)  // if clicking the main window below the toolbar while can sculpt
+	// Required conditions for sculpting: clicking main window below the toolbar, while hovering over terrain (m_canSculpt)
+	if (GetParent(GetActiveWindow()) == 0 && m_inputCommands->pickerY > m_toolbarHeight && m_canSculpt) 
 	{
+		// For each vertex in the terrain...
 		for (int i = 0; i < TERRAINRESOLUTION - 1; i++)
 		{
 			for (int j = 0; j < TERRAINRESOLUTION - 1; j++)
 			{
-				// ignore height of positions. works smoother imo.
 				DirectX::SimpleMath::Vector3 pos1, pos2;
-				pos1 = spherePos;
-				pos1.y = 0;
 
+				// Sphere position
+				pos1 = spherePos;
+				pos1.y = 0; // Y position not important so ignored, works a bit smoother like this.
+
+				// Terrain vertex position
 				pos2 = terrain->m_terrainGeometry[i][j].position;
 				pos2.y = 0;
 
-
+				// Distance between the two points
 				float distance = DirectX::SimpleMath::Vector3::Distance(pos1, pos2);
+
+				// If the distance is lower than the radius of the sphere, that point should be sculpted.
 				if (distance < m_radius)
 				{
+					// Heightmap is 1D array while vertex grid is 2D. This gets relevant index in heightmap.
 					int index = (TERRAINRESOLUTION * i) + j;
-					float magnitude = MapFloat(distance, 0, m_radius, m_magnitude, m_magnitude / 2) * timer.GetElapsedSeconds(); // amount to extrude by. magnitude of extrusion is half at the edge compared to the centre
 
+					// Amount to extrude by. Magnitude of extrusion is half at the edge compared to the centre.
+					float magnitude = MapFloat(distance, 0, m_radius, m_magnitude, m_magnitude / 2) * timer.GetElapsedSeconds(); 
+
+					// Choose action based on sculpt mode.
+					// Either raises, lowers or flattens terrain.
+					// Depending on the edit heightmap toggle, it will either adjust the heightmap values or adjust the vertex position.
 					switch (m_sculptMode)
 					{
 					case SculptMode::RAISE:

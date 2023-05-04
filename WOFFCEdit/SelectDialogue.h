@@ -16,7 +16,7 @@ public:
 	SelectDialogue(CWnd* pParent = NULL);
 	virtual ~SelectDialogue();
 	void SetObjectData(std::vector<SceneObject>* SceneGraph, int * Selection);	//passing in pointers to the data the class will operate on.
-	void ClearList();
+	void ClearList(); // remove all items from the list
 
 // Dialog Data
 #ifdef AFX_DESIGN_TIME
@@ -28,6 +28,7 @@ protected:
 	afx_msg void End();		//kill the dialogue
 	afx_msg void Select();	//Item has been selected
 
+	// Pointer to scene objects and current selection
 	std::vector<SceneObject> * m_sceneGraph;
 	int * m_currentSelection;
 	

@@ -18,7 +18,7 @@ public:
 	void SaveHeightMap();			//saves the heigtmap back to file.
 	void UpdateTerrain();			//updates the geometry based on the heigtmap
 	void GenerateHeightmap(int index, float magnitude);		//creates or alters the heightmap
-	void FlattenHeightmap(int index);
+	void FlattenHeightmap(int index); // set height map at index to 0
 	DirectX::VertexPositionNormalTexture** GetTerrain();
 	std::unique_ptr<DirectX::PrimitiveBatch<DirectX::VertexPositionNormalTexture>>  m_batch;
 	std::unique_ptr<DirectX::BasicEffect>       m_terrainEffect;
@@ -28,7 +28,7 @@ public:
 	DirectX::VertexPositionNormalTexture m_terrainGeometry[TERRAINRESOLUTION][TERRAINRESOLUTION];
 
 private:
-	float sculptScale;
+	
 	
 	BYTE m_heightMap[TERRAINRESOLUTION*TERRAINRESOLUTION];
 	void CalculateTerrainNormals();
@@ -37,7 +37,8 @@ private:
 	int		m_terrainSize;				//size of terrain in metres
 	float	m_textureCoordStep;			//step in texture coordinates between each vertex row / column
 	float   m_terrainPositionScalingFactor;	//factor we multiply the position by to convert it from its native resolution( 0- Terrain Resolution) to full scale size in metres dictated by m_Terrainsize
-	
+	float m_sculptScale; // scaling of the sculpt tool
+
 	std::string m_name;
 	int m_chunk_x_size_metres;
 	int m_chunk_y_size_metres;

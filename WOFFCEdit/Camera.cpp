@@ -5,17 +5,16 @@ using namespace DirectX::SimpleMath;
 
 Camera::Camera()
 {
-	//functional
+	// Initial values
 	m_camMoveSpeed = 10.0;
 	m_camRotRate = 7.0;
 
-	//camera
 	m_camPosition.x = 0.0f;
 	m_camPosition.y = 3.7f;
 	m_camPosition.z = -3.5f;
 
-	targetPosition = m_camPosition;
-	startPosition = m_camPosition;
+	m_targetPosition = m_camPosition;
+	m_startPosition = m_camPosition;
 
 	m_camOrientation.x = 0;
 	m_camOrientation.y = 0;
@@ -42,11 +41,11 @@ Camera::Camera()
 	m_camOrientation.y = 0.0f;
 	m_camOrientation.z = 0.0f;
 
-	mouseMode = false;
+	m_mouseMode = false;
 
-	lerpSpeed = 4.0f;
-	lerpTimer = 0.0f;
-	isLerping = false;
+	m_lerpSpeed = 4.0f;
+	m_lerpTimer = 0.0f;
+	m_isLerping = false;
 }
 
 Camera::~Camera()
@@ -56,31 +55,23 @@ Camera::~Camera()
 
 void Camera::Update(DX::StepTimer const& timer, InputCommands* input)
 {
-	// Update to add mouse input. When mouse is clicked and held when hovered over the scene window, move to middle of screen then get difference in position every frame.
-	// Also add locking to 180 degrees up/down.
-
-	
-	//update to use mouse position rather than moving to centre of screen
-
-	// optimize by only doing this when holding mouse, not every update
+	// Get window dimensions
 	RECT rect;
 	GetWindowRect(GetActiveWindow(), &rect);
-
 	int width = rect.right - rect.left;
 	int height = rect.bottom - rect.top;
 
-	if (input->RMBDown && !mouseMode)
+	// When right click happens, save the position of the click and set mouse mode to be active
+	if (input->RMBDown && !m_mouseMode)
 	{
-		clickX = input->mouseX;
-		clickY = input->mouseY;
+		m_clickX = input->mouseX;
+		m_clickY = input->mouseY;
 
-		//lastMouseX = input->mouseX;
-		//lastMouseY = input->mouseY;
-		mouseMode = true;
+		m_mouseMode = true;
 	}
-	else if(!input->RMBDown)
+	else if(!input->RMBDown) // when right click isn't pressed, disable mouse mode and process keyboard rotation
 	{
-		mouseMode = false;
+		m_mouseMode = false;
 		// Process rotation input.
 		if (input->rotRight)
 		{
@@ -102,18 +93,20 @@ void Camera::Update(DX::StepTimer const& timer, InputCommands* input)
 		}
 	}
 
+	// Distance of mouse click
 	float distanceX;
 	float distanceY;
 
-	if (mouseMode)
+	// When mouse mode is active, get the distance the mouse has moved in the last frame and apply to the camera's orientation
+	if (m_mouseMode)
 	{
-		distanceX = input->mouseX - clickX;
-		distanceY = input->mouseY - clickY;
+		distanceX = input->mouseX - m_clickX;
+		distanceY = input->mouseY - m_clickY;
 
 		m_camOrientation.y += distanceX * timer.GetElapsedSeconds() * m_camRotRate;
 		m_camOrientation.z -= distanceY * timer.GetElapsedSeconds() * m_camRotRate;
 
-		SetCursorPos(clickX, clickY);
+		SetCursorPos(m_clickX, m_clickY); // move cursor back to previous position
 	}
 
 
@@ -139,20 +132,21 @@ void Camera::Update(DX::StepTimer const& timer, InputCommands* input)
 	//create right vector from look Direction
 	m_camLookDirection.Cross(Vector3::UnitY, m_camRight);
 
-	if (isLerping)
+	// If lerping, move camera towards desired position
+	if (m_isLerping)
 	{
-		lerpTimer += timer.GetElapsedSeconds() * lerpSpeed;
-		m_camPosition = DirectX::XMVectorLerp(startPosition, targetPosition, lerpTimer);
-		if (lerpTimer > 1.0f) // lerp is between 0 and 1, when above 1 lerp has finished.
+		m_lerpTimer += timer.GetElapsedSeconds() * m_lerpSpeed;
+		m_camPosition = DirectX::XMVectorLerp(m_startPosition, m_targetPosition, m_lerpTimer);
+		if (m_lerpTimer > 1.0f) // lerp is between 0 and 1, when above 1 lerp has finished.
 		{
-			lerpTimer = 0.0f;
-			m_camPosition = targetPosition;
-			isLerping = false;
+			m_lerpTimer = 0.0f;
+			m_camPosition = m_targetPosition;
+			m_isLerping = false;
 		}
 	}
 	else
 	{
-		//process input and update stuff
+		// when not lerping, process keyboard movement
 		if (input->forward)
 		{
 			m_camPosition += m_camLookDirection * m_camMoveSpeed * timer.GetElapsedSeconds();
@@ -179,19 +173,17 @@ void Camera::Update(DX::StepTimer const& timer, InputCommands* input)
 		}
 	}
 	
-
-
 	//update lookat point
 	m_camLookAt = m_camPosition + m_camLookDirection;
 
-	
 }
 
 void Camera::SetPosition(DirectX::SimpleMath::Vector3 pos)
 {
-	targetPosition = pos;
-	startPosition = m_camPosition;
-	isLerping = true;
-	lerpTimer = 0.0f;
+	// Setup lerp with new position
+	m_targetPosition = pos;
+	m_startPosition = m_camPosition;
+	m_isLerping = true;
+	m_lerpTimer = 0.0f;
 }
 

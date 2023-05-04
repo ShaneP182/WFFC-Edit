@@ -28,18 +28,18 @@ private:
 	ToolMain m_ToolSystem;	//Instance of Tool System that we interface to. 
 	CRect WindowRECT;	//Window area rectangle. 
 	SelectDialogue m_ToolSelectDialogue;			//for modeless dialogue, declare it here
-	ObjectDialog m_ToolObjectDialog;
-	SettingsDialog m_ToolSettingsDialog;
+	ObjectDialog m_ToolObjectDialog; // object dialog window
+	SettingsDialog m_ToolSettingsDialog; // settings dialog window
 
 	int m_width;		
 	int m_height;
 
-	//Interface funtions for menu and toolbar etc requires
+	//Interface funtions for menu and toolbar
 	afx_msg void MenuFileQuit();
 	afx_msg void MenuFileSaveTerrain();
 	afx_msg void MenuEditSelect();
 	afx_msg void MenuWindowObject();
-	afx_msg	void ToolBarButton1();
+	afx_msg	void ToolBarSave();
 	afx_msg void ToolBarTranslate();
 	afx_msg void ToolBarRotate();
 	afx_msg void ToolBarScale();

@@ -5,12 +5,13 @@
 
 ObjectManipulator::ObjectManipulator()
 {
-	object = NULL;
-	manipulationMode = ManipulationMode::TRANSLATE;
-	movementRate = 1.0f;
-	rotationRate = 5.0f;
-	scaleRate = 0.2f;
-	clickTimer = 0.0f;
+	// Initial values
+	m_object = NULL;
+	m_manipulationMode = ManipulationMode::TRANSLATE;
+	m_movementRate = 1.0f;
+	m_rotationRate = 5.0f;
+	m_scaleRate = 0.2f;
+	m_clickTimer = 0.0f;
 }
 
 ObjectManipulator::~ObjectManipulator()
@@ -19,140 +20,149 @@ ObjectManipulator::~ObjectManipulator()
 
 void ObjectManipulator::Update(DX::StepTimer const& timer, InputCommands* input, Camera* camera)
 {
-	if (input->LMBDown)
+	if (input->LMBDown) // when LMB is down...
 	{
-		if (object)
+		if (m_object) // if there is a valid object...
 		{
-			if (!isManipulating)
+			if (!m_isManipulating) // if not already manipulating...
 			{
-				if (GetParent(GetActiveWindow()) == 0) // if clicking the main window, manipulate
+				if (GetParent(GetActiveWindow()) == 0) // if clicking the main window, start manipulating and save properties
 				{
-					isManipulating = true;
-					clickX = input->mouseX;
-					clickY = input->mouseY;
-					clickTimer = 0.0f;
-					initialObject = m_sceneGraph->at(*m_currentSelection);
+					m_isManipulating = true;
+					m_clickX = input->mouseX;
+					m_clickY = input->mouseY;
+					m_clickTimer = 0.0f;
+					m_initialObject = m_sceneGraph->at(*m_currentSelection);
 				}
 			}
-			else
+			else // if already manipulating, just increase the timer
 			{
-				clickTimer += timer.GetElapsedSeconds();
+				m_clickTimer += timer.GetElapsedSeconds();
 			}
 		}
-		else
+		else // if no valid object, stop manipulating
 		{
-			isManipulating = false;
+			m_isManipulating = false;
 		}
 	}
-	else
+	else // stop manipulating when LMB is released.
 	{
-		//object = NULL;
-		isManipulating = false;
+		m_isManipulating = false;
 	}
 
-	if (isManipulating && object)
+	// When manipulating...
+	if (m_isManipulating && m_object)
 	{
+		// Track how far mouse has moved since last frame
 		float distanceX;
 		float distanceY;
+		distanceX = input->mouseX - m_clickX;
+		distanceY = input->mouseY - m_clickY;
 
-		distanceX = input->mouseX - clickX;
-		distanceY = input->mouseY - clickY;
-
+		// Get forward and right vectors of the camera
 		DirectX::SimpleMath::Vector3 forward = camera->GetForward();
-		forward.y = 0; // remove yaw of forward, up-down movement is done separately
-
 		DirectX::SimpleMath::Vector3 right = camera->GetRight();
-		DirectX::SimpleMath::Vector3(1);
+		forward.y = 0; // remove yaw of forward, up-down movement is handled separately
+		
 
-		switch (manipulationMode)
+		// Different actions are performed based on the manipulation mode.
+		switch (m_manipulationMode)
 		{
 		default:
-		case ManipulationMode::TRANSLATE:
+		case ManipulationMode::TRANSLATE: 
+			// For translation, move up and down when shift is held. Otherwise move forwards/backwards and left/right.
 			if (input->shift)
 			{
-				if (!object->m_snap_to_ground)
+				if (!m_object->m_snap_to_ground)
 				{
-					object->m_position.y -= distanceY * timer.GetElapsedSeconds() * movementRate;
+					m_object->m_position.y -= distanceY * timer.GetElapsedSeconds() * m_movementRate;
 				}
 			}
 			else
 			{
-				object->m_position += right * distanceX * timer.GetElapsedSeconds() * movementRate;
-				object->m_position -= forward * distanceY * timer.GetElapsedSeconds() * movementRate;
+				m_object->m_position += right * distanceX * timer.GetElapsedSeconds() * m_movementRate;
+				m_object->m_position -= forward * distanceY * timer.GetElapsedSeconds() * m_movementRate;
 			}
 
-			m_sceneGraph->at(*m_currentSelection).posX = object->m_position.x;
-			m_sceneGraph->at(*m_currentSelection).posY = object->m_position.y;
-			m_sceneGraph->at(*m_currentSelection).posZ = object->m_position.z;
+			// Also update scene graph so positions can be saved.
+			m_sceneGraph->at(*m_currentSelection).posX = m_object->m_position.x;
+			m_sceneGraph->at(*m_currentSelection).posY = m_object->m_position.y;
+			m_sceneGraph->at(*m_currentSelection).posZ = m_object->m_position.z;
 
 			break;
 		case ManipulationMode::ROTATE:
+			// For rotation, control roll and pitch when shift is held. Yaw is changed when shift is not held.
 			if (input->shift)
 			{
-				object->m_orientation.x += distanceX * timer.GetElapsedSeconds() * rotationRate;
-				object->m_orientation.z -= distanceY * timer.GetElapsedSeconds() * rotationRate;
+				m_object->m_orientation.x += distanceX * timer.GetElapsedSeconds() * m_rotationRate;
+				m_object->m_orientation.z -= distanceY * timer.GetElapsedSeconds() * m_rotationRate;
 			}
-			else
+			else 
 			{
-				object->m_orientation.y += distanceX * timer.GetElapsedSeconds() * rotationRate;
+				m_object->m_orientation.y += distanceX * timer.GetElapsedSeconds() * m_rotationRate;
 			}
 
-			m_sceneGraph->at(*m_currentSelection).rotX = object->m_orientation.x;
-			m_sceneGraph->at(*m_currentSelection).rotY = object->m_orientation.y;
-			m_sceneGraph->at(*m_currentSelection).rotZ = object->m_orientation.z;
+			// Also update scene graph so rotation can be saved.
+			m_sceneGraph->at(*m_currentSelection).rotX = m_object->m_orientation.x;
+			m_sceneGraph->at(*m_currentSelection).rotY = m_object->m_orientation.y;
+			m_sceneGraph->at(*m_currentSelection).rotZ = m_object->m_orientation.z;
 			break;
 		case ManipulationMode::SCALE:
-			object->m_scale -= DirectX::SimpleMath::Vector3(1) * distanceY * timer.GetElapsedSeconds() * scaleRate;
+			// For scaling, it scales equally in all directions.
+			m_object->m_scale -= DirectX::SimpleMath::Vector3(1) * distanceY * timer.GetElapsedSeconds() * m_scaleRate;
 
-			m_sceneGraph->at(*m_currentSelection).scaX = object->m_scale.x;
-			m_sceneGraph->at(*m_currentSelection).scaY = object->m_scale.y;
-			m_sceneGraph->at(*m_currentSelection).scaZ = object->m_scale.z;
-			// limit scaling so it can't go below 0 here
+			// Update scene graph.
+			m_sceneGraph->at(*m_currentSelection).scaX = m_object->m_scale.x;
+			m_sceneGraph->at(*m_currentSelection).scaY = m_object->m_scale.y;
+			m_sceneGraph->at(*m_currentSelection).scaZ = m_object->m_scale.z;
 			break;
 		}
 
-		//m_camOrientation.y += distanceX * timer.GetElapsedSeconds() * m_camRotRate;
-		//m_camOrientation.z -= distanceY * timer.GetElapsedSeconds() * m_camRotRate;
-
-		SetCursorPos(clickX, clickY);
+		// Reset cursor position
+		SetCursorPos(m_clickX, m_clickY);
 	}
 }
 
 void ObjectManipulator::SetObjectPosition(float x, float y, float z)
 {
+	// Make position vector then set object position
 	DirectX::SimpleMath::Vector3 pos = DirectX::SimpleMath::Vector3(x, y, z);
 
-	if (object)
+	if (m_object)
 	{
-		object->m_position = pos;
+		m_object->m_position = pos;
 	}
 }
 
 void ObjectManipulator::SetObjectRotation(float x, float y, float z)
 {
+	// Make rotation vector then set object rotation
 	DirectX::SimpleMath::Vector3 rot = DirectX::SimpleMath::Vector3(x, y, z);
 
-	if (object)
+	if (m_object)
 	{
-		object->m_orientation = rot;
+		m_object->m_orientation = rot;
 	}
 }
 
 void ObjectManipulator::SetObjectScale(float x, float y, float z)
 {
+	// Make scale vector then set object scale
 	DirectX::SimpleMath::Vector3 scale = DirectX::SimpleMath::Vector3(x, y, z);
 
-	if (object)
+	if (m_object)
 	{
-		object->m_scale = scale;
+		m_object->m_scale = scale;
 	}
 }
 
 void ObjectManipulator::CreateTriangles(DisplayChunk* terrain)
 {
-	triangles.clear();
-	// in report, use diagram for demonstrating quad labelled with i and j showing triangles
-
+	// Creates triangles from terrain.
+	// First clear vector.
+	m_triangles.clear();
+	
+	// For every vertex point in the terrain, identify the triangles and add them to the vector.
 	for (int i = 0; i < TERRAINRESOLUTION - 1; i++)
 	{
 		for (int j = 0; j < TERRAINRESOLUTION - 1; j++)
@@ -167,45 +177,39 @@ void ObjectManipulator::CreateTriangles(DisplayChunk* terrain)
 			triangle0.vertex0 = vertex0;
 			triangle0.vertex1 = vertex1;
 			triangle0.vertex2 = vertex3;
-			triangles.push_back(triangle0);
+			m_triangles.push_back(triangle0);
 
 			triangle1.vertex0 = vertex0;
 			triangle1.vertex1 = vertex2;
 			triangle1.vertex2 = vertex3;
-			triangles.push_back(triangle1);
+			m_triangles.push_back(triangle1);
 		}
 	}
 }
 
 void ObjectManipulator::SnapToGround(DisplayChunk* terrain)
 {
-	// set object's y position to height of terrain at its x and z co-ordinates
-	if (object)
+	// If an object is selected
+	if (m_object)
 	{
-		if (object->m_snap_to_ground) // optimise - only do when changing position, don't loop through every vertice every time
+		if (m_object->m_snap_to_ground) 
 		{
-			float traceLength = 10000;
-			DirectX::SimpleMath::Vector3 rayOrigin = object->m_position;
+			float traceLength = 10000; // big number for length of the trace
+			DirectX::SimpleMath::Vector3 rayOrigin = m_object->m_position; // start trace at the object's position
 			rayOrigin.y += traceLength / 2; // offset by half of trace length so ray traces up and down
-			DirectX::SimpleMath::Vector3 rayVector = DirectX::SimpleMath::Vector3(0, -traceLength, 0);
+			DirectX::SimpleMath::Vector3 rayVector = DirectX::SimpleMath::Vector3(0, -traceLength, 0); // create trace vector
 
-			
-			CreateTriangles(terrain); // change to only run this when terrain is updated
-
-			for (Triangle triangle : triangles)
+			// Check if the ray intersects with each triangle. If it does, set the object's height to where the intersection occured.
+			for (Triangle triangle : m_triangles)
 			{
 				DirectX::SimpleMath::Vector3 intersectionPoint;
 
 				if (RayIntersectsTriangle(rayOrigin, rayVector, &triangle, intersectionPoint))
 				{
-					object->m_position.y = intersectionPoint.y;
-					m_sceneGraph->at(*m_currentSelection).posY = object->m_position.y;
-
-					// could also be improved to update object rotation based on surface normal. Would require reworking how object rotation is handled.
+					m_object->m_position.y = intersectionPoint.y;
+					m_sceneGraph->at(*m_currentSelection).posY = m_object->m_position.y;
 					break;
 				}
-
-				// remember last triangle, work through adjacent triangles first?
 			}
 			
 			
